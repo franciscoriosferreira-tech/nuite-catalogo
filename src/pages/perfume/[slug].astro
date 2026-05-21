@@ -122,7 +122,7 @@ const notas = perfume?.notas || {};
                 <span>PRECIO</span>
 
                 <strong>
-                  {formatPrice(perfume.precio)}
+                  {formatPrice(perfume.precio || perfume.precio_sugerido)}
                 </strong>
               </div>
 
