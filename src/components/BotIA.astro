@@ -1,0 +1,599 @@
+---
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  'https://anawpjjrtxzutillpnoz.supabase.co',
+  'sb_publishable_s9BoS3q6FoCAHZ9BdPgH3g_uuR7UtNZ'
+);
+
+const { data } = await supabase
+  .from('perfumes')
+  .select('*')
+  .eq('activo', true)
+  .gt('stock', 0)
+  .order('nombre');
+
+const perfumes = data || [];
+const perfumesJson = JSON.stringify(perfumes);
+---
+
+<div id="botNuite" class="bot-nuite">
+
+  <button id="abrirBot" type="button" class="bot-btn">
+    <span>🌙</span>
+    <strong>Ayuda Nuite</strong>
+  </button>
+
+  <div id="ventanaBot" class="bot-window oculto">
+
+    <div class="bot-header">
+
+      <div>
+        <h3>🌙 Ayuda Nuite</h3>
+        <p>Asistente inteligente</p>
+      </div>
+
+      <div class="acciones">
+
+        <button id="minimizarBot" type="button">
+          _
+        </button>
+
+        <button id="cerrarBot" type="button">
+          ✕
+        </button>
+
+      </div>
+
+    </div>
+
+    <div class="bot-content">
+
+      <div class="saludo">
+        <p>Hola 👋</p>
+
+        <h2>
+          ¿En qué puedo ayudarte?
+        </h2>
+      </div>
+
+      <div class="opciones">
+
+        <button class="opcionRapida" data-opcion="recomendar">
+          💎 Recomiéndame un perfume
+        </button>
+
+        <button class="opcionRapida" data-opcion="vendidos">
+          🔥 Más vendidos
+        </button>
+
+        <button class="opcionRapida" data-opcion="regalo">
+          🎁 Busco un regalo
+        </button>
+
+        <button class="opcionRapida" data-opcion="elegante">
+          🖤 Quiero oler elegante
+        </button>
+
+        <button class="opcionRapida" data-opcion="personalizada">
+          ✨ Ayuda personalizada
+        </button>
+
+      </div>
+
+      <div id="respuestaBot" class="respuesta"></div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script is:inline define:vars={{ perfumesJson }}>
+  document.addEventListener("DOMContentLoaded", () => {
+
+    const perfumes =
+      JSON.parse(perfumesJson);
+
+    const abrirBot =
+      document.querySelector("#abrirBot");
+
+    const ventanaBot =
+      document.querySelector("#ventanaBot");
+
+    const minimizarBot =
+      document.querySelector("#minimizarBot");
+
+    const cerrarBot =
+      document.querySelector("#cerrarBot");
+
+    const respuestaBot =
+      document.querySelector("#respuestaBot");
+
+    const opciones =
+      document.querySelectorAll(".opcionRapida");
+
+    abrirBot.addEventListener("click", () => {
+      ventanaBot.classList.toggle("oculto");
+    });
+
+    minimizarBot.addEventListener("click", () => {
+      ventanaBot.classList.add("oculto");
+    });
+
+    cerrarBot.addEventListener("click", () => {
+
+      ventanaBot.classList.add("oculto");
+
+      respuestaBot.innerHTML = "";
+
+    });
+
+    function precioCLP(precio) {
+
+      return new Intl.NumberFormat("es-CL", {
+        style: "currency",
+        currency: "CLP",
+        maximumFractionDigits: 0,
+      }).format(precio || 0);
+
+    }
+
+    function imagenPerfume(perfume) {
+
+      if (perfume.imagen_url)
+        return perfume.imagen_url;
+
+      if (perfume.imagen_local)
+        return `/${perfume.imagen_local}`;
+
+      return "/img/logo.png";
+
+    }
+
+    function mostrarPerfumes(lista, titulo) {
+
+      respuestaBot.innerHTML = `
+        <p class="mini-title">
+          Recomendaciones
+        </p>
+
+        <h4>${titulo}</h4>
+      `;
+
+      lista.forEach((perfume) => {
+
+        respuestaBot.innerHTML += `
+          <article class="bot-card">
+
+            <img
+              src="${imagenPerfume(perfume)}"
+              alt="${perfume.nombre}"
+            />
+
+            <div>
+
+              <p class="marca">
+                ${perfume.marca || ""}
+              </p>
+
+              <h5>
+                ${perfume.nombre || ""}
+              </h5>
+
+              <p class="desc">
+                ${
+                  perfume.descripcion ||
+                  "Perfume disponible en Nuite Perfumes."
+                }
+              </p>
+
+              <div class="bot-card-bottom">
+
+                <strong>
+                  ${precioCLP(perfume.precio)}
+                </strong>
+
+                <span>
+                  ${perfume.stock || 0} disp.
+                </span>
+
+              </div>
+
+              <a href="${
+                perfume.slug
+                  ? `/perfume/${perfume.slug}`
+                  : "#"
+              }">
+                Ver perfume
+              </a>
+
+            </div>
+
+          </article>
+        `;
+
+      });
+
+    }
+
+    opciones.forEach((boton) => {
+
+      boton.addEventListener("click", () => {
+
+        const opcion =
+          boton.dataset.opcion;
+
+        let resultados = [];
+
+        if (opcion === "recomendar") {
+
+          resultados =
+            perfumes.slice(0, 3);
+
+          mostrarPerfumes(
+            resultados,
+            "Perfumes recomendados"
+          );
+
+        }
+
+        if (opcion === "vendidos") {
+
+          resultados =
+            [...perfumes]
+              .sort((a, b) =>
+                Number(b.precio || 0) -
+                Number(a.precio || 0)
+              )
+              .slice(0, 3);
+
+          mostrarPerfumes(
+            resultados,
+            "Más destacados"
+          );
+
+        }
+
+        if (opcion === "regalo") {
+
+          resultados =
+            perfumes
+              .filter((p) =>
+                p.genero === "Mujer" ||
+                p.genero === "Unisex"
+              )
+              .slice(0, 3);
+
+          mostrarPerfumes(
+            resultados,
+            "Perfumes para regalo"
+          );
+
+        }
+
+        if (opcion === "elegante") {
+
+          resultados =
+            perfumes
+              .filter((p) => {
+
+                const fragancia =
+                  String(
+                    p.tipo_fragancia || ""
+                  ).toLowerCase();
+
+                return (
+                  fragancia.includes("oriental") ||
+                  fragancia.includes("amaderado") ||
+                  fragancia.includes("especiado")
+                );
+
+              })
+              .slice(0, 3);
+
+          mostrarPerfumes(
+            resultados,
+            "Fragancias elegantes"
+          );
+
+        }
+
+        if (opcion === "personalizada") {
+
+          respuestaBot.innerHTML = `
+            <div class="personalizada">
+
+              <p class="mini-title">
+                Atención personalizada
+              </p>
+
+              <h4>
+                Hablemos 😄
+              </h4>
+
+              <p>
+                Te ayudamos a elegir según duración,
+                ocasión, aroma, presupuesto o si
+                buscas un regalo.
+              </p>
+
+              <a
+                href="https://wa.me/56935226409"
+                target="_blank"
+              >
+                Hablar por WhatsApp
+              </a>
+
+            </div>
+          `;
+
+        }
+
+      });
+
+    });
+
+  });
+</script>
+
+<style>
+  .bot-nuite {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    z-index: 200;
+  }
+
+  .bot-btn {
+    border: none;
+    background: #ffc400;
+    color: #000;
+    border-radius: 999px;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 1000;
+    cursor: pointer;
+    box-shadow: 0 10px 30px rgba(255,196,0,.25);
+  }
+
+  .bot-btn span {
+    font-size: 20px;
+  }
+
+  .bot-window {
+    position: absolute;
+    right: 0;
+    bottom: 62px;
+    width: 360px;
+    max-height: 70vh;
+    overflow: hidden;
+    background: #0b0b0b;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 28px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.65);
+  }
+
+  .oculto {
+    display: none;
+  }
+
+  .bot-header {
+    background: #000;
+    border-bottom: 1px solid rgba(255,255,255,.10);
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .bot-header h3 {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  .bot-header p {
+    margin: 4px 0 0;
+    color: #777;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .acciones {
+    display: flex;
+    gap: 8px;
+  }
+
+  .acciones button {
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: none;
+    background: #171717;
+    color: white;
+    font-weight: 1000;
+    cursor: pointer;
+  }
+
+  .bot-content {
+    max-height: calc(70vh - 74px);
+    overflow-y: auto;
+    padding: 20px;
+    background:
+      radial-gradient(circle at bottom, rgba(255,196,0,.10), transparent 35%),
+      #0b0b0b;
+  }
+
+  .saludo p {
+    color: #999;
+    font-size: 22px;
+    margin: 0;
+  }
+
+  .saludo h2 {
+    margin: 10px 0 28px;
+    font-size: 36px;
+    line-height: 1;
+  }
+
+  .opciones {
+    display: grid;
+    gap: 12px;
+  }
+
+  .opcionRapida {
+    width: 100%;
+    border: none;
+    border-radius: 999px;
+    background: #1c1c1c;
+    color: white;
+    padding: 14px 16px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: .25s;
+  }
+
+  .opcionRapida:hover {
+    background: #ffc400;
+    color: #000;
+  }
+
+  .respuesta {
+    margin-top: 22px;
+    display: grid;
+    gap: 14px;
+  }
+
+  .mini-title {
+    color: #ffc400;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 1000;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .respuesta h4 {
+    margin: 4px 0 8px;
+    font-size: 22px;
+  }
+
+  .bot-card {
+    background: #171717;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 22px;
+    padding: 14px;
+    display: grid;
+    grid-template-columns: 86px 1fr;
+    gap: 14px;
+  }
+
+  .bot-card img {
+    width: 86px;
+    height: 86px;
+    border-radius: 16px;
+    object-fit: cover;
+  }
+
+  .bot-card .marca {
+    color: #ffc400;
+    margin: 0;
+    font-size: 11px;
+    font-weight: 1000;
+  }
+
+  .bot-card h5 {
+    margin: 3px 0;
+    font-size: 16px;
+  }
+
+  .bot-card .desc {
+    color: #aaa;
+    margin: 6px 0;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .bot-card-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+  }
+
+  .bot-card-bottom strong {
+    color: white;
+    font-size: 14px;
+  }
+
+  .bot-card-bottom span {
+    color: #00e69a;
+    font-size: 12px;
+    font-weight: 1000;
+  }
+
+  .bot-card a,
+  .personalizada a {
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+    background: #ffc400;
+    color: #000;
+    border-radius: 14px;
+    padding: 12px;
+    font-size: 13px;
+    font-weight: 1000;
+    text-decoration: none;
+  }
+
+  .personalizada {
+    background: #171717;
+    border: 1px solid rgba(255,255,255,.10);
+    border-radius: 22px;
+    padding: 18px;
+  }
+
+  .personalizada p {
+    color: #aaa;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 520px) {
+
+    .bot-nuite {
+      right: 12px;
+      bottom: 12px;
+    }
+
+    .bot-btn {
+      padding: 11px 14px;
+      font-size: 12px;
+    }
+
+    .bot-window {
+      width: calc(100vw - 24px);
+      right: 0;
+      bottom: 58px;
+      max-height: 72vh;
+    }
+
+    .bot-content {
+      max-height: calc(72vh - 74px);
+    }
+
+    .bot-card {
+      grid-template-columns: 76px 1fr;
+    }
+
+    .bot-card img {
+      width: 76px;
+      height: 76px;
+    }
+
+  }
+</style>

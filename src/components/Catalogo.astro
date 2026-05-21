@@ -1,0 +1,674 @@
+---
+---
+
+<section class="catalogo" id="catalogo">
+  <div class="wrap">
+    <p class="kicker">INVENTARIO DISPONIBLE</p>
+
+    <h1>Catálogo de perfumes</h1>
+
+    <p class="intro">
+      Explora fragancias disponibles con información clave como tamaño,
+      precio, stock, género y tipo de aroma.
+    </p>
+
+    <p class="contador" id="contador">
+      Cargando perfumes disponibles...
+    </p>
+
+    <div class="filtros">
+      <input id="buscador" type="text" placeholder="Buscar perfume..." />
+
+      <div class="fila-filtros">
+        <select id="filtroMarca">
+          <option value="">Todas las marcas</option>
+        </select>
+
+        <select id="filtroGenero">
+          <option value="">Todos los géneros</option>
+          <option value="Hombre">Hombre</option>
+          <option value="Mujer">Mujer</option>
+          <option value="Unisex">Unisex</option>
+        </select>
+
+        <select id="ordenar">
+          <option value="">Ordenar perfumes</option>
+          <option value="menor">Precio más bajo</option>
+          <option value="mayor">Precio más alto</option>
+          <option value="nombre">Orden alfabético</option>
+        </select>
+
+        <button id="limpiar" type="button">
+          Limpiar filtros
+        </button>
+      </div>
+    </div>
+
+    <div class="grid" id="gridPerfumes"></div>
+
+    <p id="sinResultados" class="sin-resultados">
+      No se encontraron perfumes con esos filtros.
+    </p>
+
+    <div class="paginacion" id="paginacion"></div>
+  </div>
+</section>
+
+<script is:inline type="module">
+  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+  const supabase = createClient(
+    "https://anawpjjrtxzutillpnoz.supabase.co",
+    "sb_publishable_s9BoS3q6FoCAHZ9BdPgH3g_uuR7UtNZ"
+  );
+
+  const buscador = document.querySelector("#buscador");
+  const filtroMarca = document.querySelector("#filtroMarca");
+  const filtroGenero = document.querySelector("#filtroGenero");
+  const ordenar = document.querySelector("#ordenar");
+  const limpiar = document.querySelector("#limpiar");
+  const contador = document.querySelector("#contador");
+  const sinResultados = document.querySelector("#sinResultados");
+  const paginacion = document.querySelector("#paginacion");
+  const grid = document.querySelector("#gridPerfumes");
+
+  let perfumes = [];
+  let paginaActual = 1;
+  const porPagina = 12;
+
+  const formatPrice = (price) =>
+    new Intl.NumberFormat("es-CL", {
+      style: "currency",
+      currency: "CLP",
+      maximumFractionDigits: 0,
+    }).format(price || 0);
+
+  function imagenPerfume(p) {
+    return p.imagen_url || (p.imagen_local ? `/${p.imagen_local}` : "/img/logo.png");
+  }
+
+  function crearCard(p) {
+    const article = document.createElement("article");
+    article.className = "card perfume-card";
+    article.dataset.nombre = (p.nombre || "").toLowerCase();
+    article.dataset.marca = p.marca || "";
+    article.dataset.genero = p.genero || "";
+    article.dataset.fragancia = (p.tipo_fragancia || "").toLowerCase();
+    article.dataset.precio = p.precio || 0;
+
+    article.innerHTML = `
+      <div class="imgbox">
+        <img src="${imagenPerfume(p)}" alt="${p.nombre || "Perfume"}" />
+
+        <span class="tag">
+          ${p.tipo_fragancia || "Fragancia"}
+        </span>
+
+        <div class="size">
+          <small>TAMAÑO</small>
+          <strong>${p.ml || 100} ml</strong>
+        </div>
+      </div>
+
+      <div class="body">
+        <div class="head">
+          <div>
+            <h2>${p.nombre || "Perfume sin nombre"}</h2>
+            <p class="brand">${p.marca || ""}</p>
+          </div>
+
+          <span class="gender">${p.genero || "Unisex"}</span>
+        </div>
+
+        <p class="desc">
+          ${p.descripcion || "Perfume disponible en Nuite Perfumes."}
+        </p>
+
+        <div class="info">
+          <div>
+            <small>PRECIO</small>
+            <strong>${formatPrice(p.precio || 0)}</strong>
+          </div>
+
+          <div>
+            <small>STOCK</small>
+            <strong class="stock">${p.stock || 0} Disponible</strong>
+          </div>
+        </div>
+
+        <div class="fragancia">
+          <small>TIPO DE FRAGANCIA</small>
+          <strong>${p.tipo_fragancia || "No especificado"}</strong>
+        </div>
+
+        <a class="detalle-boton" href="${p.slug ? `/perfume/${p.slug}` : "#"}">
+          Ver detalles
+        </a>
+      </div>
+    `;
+
+    return article;
+  }
+
+  function cargarMarcas() {
+    const marcas = [...new Set(perfumes.map((p) => p.marca).filter(Boolean))];
+
+    filtroMarca.innerHTML = `<option value="">Todas las marcas</option>`;
+
+    marcas.forEach((marca) => {
+      const option = document.createElement("option");
+      option.value = marca;
+      option.textContent = marca;
+      filtroMarca.appendChild(option);
+    });
+  }
+
+  function obtenerFiltradas() {
+    const texto = buscador.value.toLowerCase().trim();
+    const marca = filtroMarca.value;
+    const genero = filtroGenero.value;
+
+    let filtradas = perfumes.filter((p) => {
+      const nombre = (p.nombre || "").toLowerCase();
+      const marcaCard = p.marca || "";
+      const generoCard = p.genero || "";
+      const fragancia = (p.tipo_fragancia || "").toLowerCase();
+
+      const coincideTexto =
+        nombre.includes(texto) ||
+        marcaCard.toLowerCase().includes(texto) ||
+        fragancia.includes(texto);
+
+      const coincideMarca = !marca || marcaCard === marca;
+      const coincideGenero = !genero || generoCard === genero;
+
+      return coincideTexto && coincideMarca && coincideGenero;
+    });
+
+    if (ordenar.value === "menor") {
+      filtradas.sort((a, b) => Number(a.precio || 0) - Number(b.precio || 0));
+    }
+
+    if (ordenar.value === "mayor") {
+      filtradas.sort((a, b) => Number(b.precio || 0) - Number(a.precio || 0));
+    }
+
+    if (ordenar.value === "nombre") {
+      filtradas.sort((a, b) =>
+        (a.nombre || "").localeCompare(b.nombre || "")
+      );
+    }
+
+    return filtradas;
+  }
+
+  function renderizar() {
+    const filtradas = obtenerFiltradas();
+    const totalPaginas = Math.ceil(filtradas.length / porPagina);
+
+    if (paginaActual > totalPaginas) {
+      paginaActual = 1;
+    }
+
+    grid.innerHTML = "";
+
+    const inicio = (paginaActual - 1) * porPagina;
+    const visibles = filtradas.slice(inicio, inicio + porPagina);
+
+    visibles.forEach((p) => {
+      grid.appendChild(crearCard(p));
+    });
+
+    contador.textContent =
+      filtradas.length > 0
+        ? `Mostrando ${visibles.length} de ${filtradas.length} perfumes`
+        : "No hay perfumes para mostrar";
+
+    sinResultados.style.display = filtradas.length === 0 ? "block" : "none";
+
+    paginacion.innerHTML = "";
+
+    if (totalPaginas <= 1) return;
+
+    for (let i = 1; i <= totalPaginas; i++) {
+      const boton = document.createElement("button");
+      boton.textContent = i;
+      boton.type = "button";
+
+      if (i === paginaActual) {
+        boton.classList.add("activo");
+      }
+
+      boton.addEventListener("click", () => {
+        paginaActual = i;
+        renderizar();
+
+        document.querySelector("#catalogo").scrollIntoView({
+          behavior: "smooth",
+        });
+      });
+
+      paginacion.appendChild(boton);
+    }
+  }
+
+  function resetear() {
+    paginaActual = 1;
+    renderizar();
+  }
+
+  async function cargarPerfumesDesdeSupabase() {
+    contador.textContent = "Cargando perfumes disponibles...";
+
+    const { data, error } = await supabase
+      .from("perfumes")
+      .select("*")
+      .eq("activo", true)
+      .gt("stock", 0)
+      .order("nombre");
+
+    if (error) {
+      console.error(error);
+      contador.textContent = "No se pudo cargar el catálogo.";
+      return;
+    }
+
+    perfumes = data || [];
+    cargarMarcas();
+    renderizar();
+  }
+
+  buscador.addEventListener("input", resetear);
+  filtroMarca.addEventListener("change", resetear);
+  filtroGenero.addEventListener("change", resetear);
+  ordenar.addEventListener("change", resetear);
+
+  limpiar.addEventListener("click", () => {
+    buscador.value = "";
+    filtroMarca.value = "";
+    filtroGenero.value = "";
+    ordenar.value = "";
+    paginaActual = 1;
+    renderizar();
+  });
+
+  cargarPerfumesDesdeSupabase();
+</script>
+
+<style is:global>
+  .catalogo {
+    background: #000;
+    min-height: 100vh;
+    padding: 70px 24px;
+    color: white;
+  }
+
+  .wrap {
+    max-width: 1380px;
+    margin: 0 auto;
+  }
+
+  .kicker {
+    color: #ffc400;
+    font-weight: 900;
+    letter-spacing: 8px;
+    font-size: 13px;
+  }
+
+  h1 {
+    font-size: 56px;
+    margin: 16px 0 10px;
+    font-weight: 1000;
+    line-height: 1;
+  }
+
+  .intro {
+    color: #b7b7b7;
+    font-size: 18px;
+    max-width: 760px;
+    line-height: 1.7;
+  }
+
+  .contador {
+    color: #cfcfcf;
+    font-weight: 900;
+    margin-top: 48px;
+    margin-bottom: 24px;
+  }
+
+  .filtros {
+    background: #171717;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 30px;
+    padding: 24px;
+    margin-bottom: 56px;
+  }
+
+  .filtros input {
+    width: 100%;
+    height: 62px;
+    border-radius: 17px;
+    border: none;
+    background: #000;
+    color: white;
+    padding: 0 24px;
+    font-size: 18px;
+    outline: none;
+    margin-bottom: 18px;
+  }
+
+  .fila-filtros {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 280px;
+    gap: 16px;
+  }
+
+  .fila-filtros select,
+  .fila-filtros button {
+    width: 100%;
+    height: 58px;
+    border-radius: 16px;
+    border: none;
+    padding: 0 22px;
+    font-size: 16px;
+    outline: none;
+  }
+
+  .fila-filtros select {
+    background: #000;
+    color: white;
+  }
+
+  .fila-filtros button {
+    background: #ffc400;
+    color: #000;
+    font-weight: 1000;
+    cursor: pointer;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 34px;
+  }
+
+  .card {
+    background: #171717;
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 30px;
+    overflow: hidden;
+    transition: .25s;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(255,196,0,.55);
+    box-shadow: 0 0 30px rgba(255,196,0,.10);
+  }
+
+  .imgbox {
+    position: relative;
+    height: 355px;
+    overflow: hidden;
+    background: #111;
+  }
+
+  .imgbox img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 28px;
+    background: #0b0b0b;
+  }
+
+  .tag {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    background: #ffc400;
+    color: #000;
+    padding: 8px 18px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 1000;
+    text-transform: uppercase;
+  }
+
+  .size {
+    position: absolute;
+    right: 18px;
+    bottom: 18px;
+    background: rgba(0,0,0,.82);
+    border-radius: 18px;
+    padding: 14px 18px;
+    text-align: center;
+  }
+
+  .size small {
+    display: block;
+    color: #8f8f8f;
+    font-size: 11px;
+    margin-bottom: 3px;
+  }
+
+  .size strong {
+    color: #ffc400;
+    font-size: 22px;
+    line-height: 1;
+  }
+
+  .body {
+    padding: 28px;
+  }
+
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+  }
+
+  h2 {
+    font-size: 22px;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .brand {
+    color: #ffc400;
+    font-weight: 900;
+    margin: 8px 0 0;
+    font-size: 18px;
+  }
+
+  .gender {
+    border: 1px solid rgba(255,255,255,.12);
+    color: white;
+    padding: 7px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+
+  .desc {
+    color: #b7b7b7;
+    line-height: 1.8;
+    min-height: 72px;
+    margin: 24px 0;
+    font-size: 16px;
+  }
+
+  .info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+
+  .info div,
+  .fragancia {
+    background: #0b0b0b;
+    border-radius: 18px;
+    padding: 18px;
+  }
+
+  small {
+    display: block;
+    color: #777;
+    font-size: 11px;
+    letter-spacing: .8px;
+  }
+
+  .info strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 18px;
+  }
+
+  .stock {
+    color: #00e69a;
+  }
+
+  .fragancia {
+    margin-top: 16px;
+    background: #202020;
+    border: 1px solid rgba(255,255,255,.08);
+  }
+
+  .fragancia strong {
+    display: block;
+    margin-top: 8px;
+    font-size: 17px;
+  }
+
+  .detalle-boton {
+    width: 100%;
+    height: 54px;
+    margin-top: 20px;
+    border-radius: 18px;
+    background: #ffc400;
+    color: #000;
+    font-size: 15px;
+    font-weight: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: .25s;
+  }
+
+  .detalle-boton:hover {
+    background: #ffd84d;
+    transform: translateY(-2px);
+  }
+
+  .sin-resultados {
+    display: none;
+    margin-top: 40px;
+    background: #171717;
+    border-radius: 24px;
+    padding: 26px;
+    text-align: center;
+    font-weight: 900;
+    color: #cfcfcf;
+  }
+
+  .paginacion {
+    margin-top: 54px;
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+  }
+
+  .paginacion button {
+    width: 52px;
+    height: 52px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.10);
+    background: #151515;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all .25s ease;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    box-shadow:
+      inset 0 0 0 1px rgba(255,255,255,.03);
+  }
+
+  .paginacion button:hover {
+    background: #232323;
+    border-color: rgba(255,196,0,.45);
+    transform: translateY(-2px);
+  }
+
+  .paginacion button.activo {
+    background: #ffc400;
+    color: #000;
+    border-color: #ffc400;
+
+    box-shadow:
+      0 0 18px rgba(255,196,0,.35),
+      inset 0 0 0 1px rgba(255,255,255,.12);
+  }
+
+  @media (max-width: 1100px) {
+    .grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .fila-filtros {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 720px) {
+    .catalogo {
+      padding: 42px 16px;
+    }
+
+    .grid {
+      grid-template-columns: 1fr;
+      gap: 24px;
+    }
+
+    .fila-filtros {
+      grid-template-columns: 1fr;
+    }
+
+    .filtros {
+      padding: 18px;
+      border-radius: 22px;
+    }
+
+    .filtros input {
+      height: 56px;
+      font-size: 15px;
+    }
+
+    h1 {
+      font-size: 38px;
+    }
+
+    .imgbox {
+      height: 300px;
+    }
+
+    .body {
+      padding: 22px;
+    }
+
+    .detalle-boton {
+      height: 52px;
+      font-size: 15px;
+    }
+
+    .paginacion button {
+      width: 46px;
+      height: 46px;
+    }
+  }
+</style>

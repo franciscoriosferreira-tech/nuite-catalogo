@@ -1,0 +1,108 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navegacion from "../components/Navegacion.astro";
+---
+
+<Layout title="Políticas | Nuite Perfumes">
+  <Navegacion />
+
+  <section class="pagina">
+    <div class="contenedor">
+      <p class="kicker">INFORMACIÓN IMPORTANTE</p>
+
+      <h1>Políticas de la tienda</h1>
+
+      <div class="lista">
+        <div class="card">
+          <h2>Cambios y devoluciones</h2>
+
+          <p>
+            No se realizan devoluciones en perfumes abiertos o usados.
+            Los productos deben mantenerse sellados y en perfectas condiciones.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Envíos</h2>
+
+          <p>
+            Realizamos envíos a todo Chile. El tiempo de entrega dependerá
+            de la región y empresa de transporte.
+          </p>
+        </div>
+
+        <div class="card">
+          <h2>Reservas</h2>
+
+          <p>
+            Las reservas de productos tendrán una duración máxima de 24 horas,
+            salvo acuerdo previo.
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<style>
+  .pagina {
+    min-height: 100vh;
+    background: #000;
+    color: white;
+    padding: 70px 22px;
+  }
+
+  .contenedor {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+
+  .kicker {
+    color: #ffc400;
+    font-weight: 900;
+    letter-spacing: 6px;
+    font-size: 13px;
+  }
+
+  h1 {
+    margin: 14px 0 0;
+    font-size: 52px;
+    font-weight: 1000;
+    line-height: 1;
+  }
+
+  .lista {
+    margin-top: 48px;
+    display: grid;
+    gap: 24px;
+  }
+
+  .card {
+    background: #171717;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 30px;
+    padding: 30px;
+  }
+
+  h2 {
+    color: #ffc400;
+    font-size: 26px;
+    margin: 0;
+  }
+
+  p {
+    color: #d0d0d0;
+    line-height: 1.8;
+    margin: 16px 0 0;
+  }
+
+  @media (max-width: 520px) {
+    h1 {
+      font-size: 38px;
+    }
+
+    .card {
+      padding: 24px;
+    }
+  }
+</style>

@@ -1,0 +1,431 @@
+---
+const marcas = [
+  "French Avenue",
+  "Armaf",
+  "Lattafa",
+  "Maison Alhambra",
+  "Paris Corner",
+  "Desodorante",
+  "Rave",
+];
+---
+
+<header class="nav">
+
+  <div class="nav-inner">
+
+    <a href="/" class="brand">
+
+      <span class="logo-circle">
+        <img src="/img/logo.png" alt="Nuite Perfumes" />
+      </span>
+
+      <div class="brand-text">
+        <strong>NUITE PERFUMES</strong>
+        <span>FRAGANCIAS PREMIUM</span>
+      </div>
+
+    </a>
+
+    <nav class="menu">
+
+      <a href="/">Inicio</a>
+
+      <div class="dropdown">
+
+        <button>Marcas</button>
+
+        <div class="dropdown-menu">
+
+          {marcas.map((marca) => (
+
+            <a href={`/?marca=${encodeURIComponent(marca)}#catalogo`}>
+              {marca}
+            </a>
+
+          ))}
+
+        </div>
+
+      </div>
+
+      <a href="/ofertas">Ofertas</a>
+
+      <a href="/politicas">Políticas</a>
+
+      <a href="/contacto">Contacto</a>
+
+    </nav>
+
+    <div class="actions">
+
+      <a
+        href="https://instagram.com/nuiteperfumes"
+        target="_blank"
+      >
+        Instagram
+      </a>
+
+      <a
+        href="https://wa.me/56935226409"
+        target="_blank"
+      >
+        WhatsApp
+      </a>
+
+    </div>
+
+  </div>
+
+  <div class="mobile-menu">
+
+    <a href="/">Inicio</a>
+
+    <a href="/ofertas">Ofertas</a>
+
+    <a href="/politicas">Políticas</a>
+
+    <a href="/contacto">Contacto</a>
+
+    <a
+      href="https://instagram.com/nuiteperfumes"
+      target="_blank"
+    >
+      Instagram
+    </a>
+
+    <a
+      href="https://wa.me/56935226409"
+      target="_blank"
+    >
+      WhatsApp
+    </a>
+
+  </div>
+
+</header>
+
+<style>
+
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+
+    background: var(--gold);
+
+    color: #000;
+
+    border-bottom: 1px solid rgba(0,0,0,.12);
+  }
+
+  .nav-inner {
+    max-width: 1320px;
+
+    margin: 0 auto;
+
+    padding: 12px 22px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 24px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+
+    gap: 14px;
+
+    flex-shrink: 0;
+
+    text-decoration: none;
+
+    color: #000;
+  }
+
+  .logo-circle {
+    width: 54px;
+    height: 54px;
+
+    border-radius: 50%;
+
+    overflow: hidden;
+
+    border: 3px solid #000;
+
+    background: #000;
+
+    flex-shrink: 0;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .logo-circle img {
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+  }
+
+  .brand-text strong {
+    display: block;
+
+    font-size: 31px;
+
+    font-weight: 1000;
+
+    line-height: .9;
+
+    letter-spacing: -1px;
+  }
+
+  .brand-text span {
+    display: block;
+
+    margin-top: 8px;
+
+    font-size: 12px;
+
+    font-weight: 900;
+
+    letter-spacing: 5px;
+  }
+
+  .menu {
+    display: flex;
+    align-items: center;
+
+    gap: 24px;
+
+    font-size: 16px;
+
+    font-weight: 1000;
+  }
+
+  .menu a,
+  .menu button {
+
+    font: inherit;
+
+    background: transparent;
+
+    border: 0;
+
+    color: #000;
+
+    cursor: pointer;
+
+    text-decoration: none;
+  }
+
+  .menu a:hover,
+  .menu button:hover {
+    color: #fff;
+  }
+
+  .dropdown {
+    position: relative;
+  }
+
+  .dropdown-menu {
+  position: absolute;
+  left: 50%;
+  top: 24px;
+  transform: translateX(-50%);
+  width: 270px;
+  background: #000;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 22px;
+  padding: 20px 12px 12px;
+  display: none;
+  box-shadow: 0 30px 80px rgba(0,0,0,.5);
+}
+
+  .dropdown:hover .dropdown-menu {
+
+    display: grid;
+
+    gap: 4px;
+  }
+
+  .dropdown-menu a {
+
+    color: #fff;
+
+    padding: 12px 14px;
+
+    border-radius: 14px;
+
+    font-size: 14px;
+  }
+
+  .dropdown-menu a:hover {
+
+    background: var(--gold);
+
+    color: #000;
+  }
+
+  .actions {
+
+    display: flex;
+
+    gap: 10px;
+  }
+
+  .actions a {
+
+    background: #000;
+
+    color: var(--gold);
+
+    padding: 13px 20px;
+
+    border-radius: 14px;
+
+    font-size: 14px;
+
+    font-weight: 1000;
+
+    text-decoration: none;
+
+    transition: .2s;
+  }
+
+  .actions a:hover {
+
+    transform: translateY(-2px);
+  }
+
+  .mobile-menu {
+    display: none;
+  }
+
+  @media (max-width: 1100px) {
+
+    .nav-inner {
+      padding: 10px 16px;
+    }
+
+    .menu,
+    .actions {
+      display: none;
+    }
+
+    .logo-circle {
+      width: 58px;
+      height: 58px;
+    }
+
+    .brand-text strong {
+      font-size: 24px;
+    }
+
+    .brand-text span {
+      font-size: 9px;
+      letter-spacing: 3px;
+    }
+
+    .mobile-menu {
+
+      display: flex;
+
+      overflow-x: auto;
+
+      gap: 18px;
+
+      padding: 10px 16px 12px;
+
+      font-size: 14px;
+
+      font-weight: 1000;
+
+      white-space: nowrap;
+
+      scrollbar-width: none;
+    }
+
+    .mobile-menu a {
+
+      color: #000;
+
+      text-decoration: none;
+    }
+
+    .mobile-menu::-webkit-scrollbar {
+      display: none;
+    }
+
+  }
+
+  @media (max-width: 1100px) {
+
+  .nav-inner {
+    padding: 10px 16px;
+    gap: 12px;
+  }
+
+  .menu {
+    display: none;
+  }
+
+  .actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .actions a {
+    padding: 10px 14px;
+    font-size: 12px;
+    border-radius: 12px;
+  }
+
+  .logo-circle {
+    width: 48px;
+    height: 48px;
+  }
+
+  .brand-text strong {
+    font-size: 18px;
+  }
+
+  .brand-text span {
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+
+  .mobile-menu {
+    display: flex;
+
+    overflow-x: auto;
+
+    gap: 18px;
+
+    padding: 10px 16px 12px;
+
+    font-size: 14px;
+
+    font-weight: 1000;
+
+    white-space: nowrap;
+
+    scrollbar-width: none;
+  }
+
+  .mobile-menu a {
+    color: #000;
+    text-decoration: none;
+  }
+
+  .mobile-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+}

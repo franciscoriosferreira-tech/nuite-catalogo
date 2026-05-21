@@ -1,0 +1,220 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navegacion from "../components/Navegacion.astro";
+---
+
+<Layout title="Contacto | Nuite Perfumes">
+  <Navegacion />
+
+  <section class="pagina">
+    <div class="contenedor">
+      <p class="kicker">ATENCIÓN PERSONALIZADA</p>
+
+      <h1>Contacto</h1>
+
+      <p class="intro">
+        ¿Buscas un perfume en especial o necesitas ayuda para elegir una fragancia?
+        Escríbenos y te ayudamos a encontrar la mejor opción según tu estilo,
+        ocasión o presupuesto.
+      </p>
+
+      <div class="grid">
+        <div class="card">
+          <h2>Información de contacto</h2>
+
+          <div class="datos">
+            <p><strong>WhatsApp:</strong> +56 9 3522 6409</p>
+            <p><strong>Correo:</strong> nuiteperfumes@gmail.com</p>
+            <p>
+              <strong>Atención:</strong>
+              Consultas por perfumes, disponibilidad, precios y recomendaciones.
+            </p>
+          </div>
+
+          <a
+            href="https://wa.me/56935226409"
+            target="_blank"
+            class="btn"
+          >
+            Escribir por WhatsApp
+          </a>
+        </div>
+
+        <form id="formContacto" class="card">
+          <h2>Enviar consulta</h2>
+
+          <input
+            id="nombreContacto"
+            type="text"
+            placeholder="Tu nombre"
+            required
+          />
+
+          <input
+            id="numeroContacto"
+            type="text"
+            placeholder="Tu número"
+            required
+          />
+
+          <textarea
+            id="detalleContacto"
+            placeholder="Detalle de tu consulta"
+            required
+            rows="5"
+          ></textarea>
+
+          <button type="submit">
+            Enviar consulta
+          </button>
+        </form>
+      </div>
+    </div>
+  </section>
+</Layout>
+
+<script is:inline>
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.querySelector("#formContacto");
+
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+
+      const nombre = document.querySelector("#nombreContacto").value.trim();
+      const numero = document.querySelector("#numeroContacto").value.trim();
+      const detalle = document.querySelector("#detalleContacto").value.trim();
+
+      const mensaje = `Hola Nuite Perfumes 👋
+
+    Mi nombre es ${nombre} y me gustaría realizar una consulta.
+
+    📱 Número de contacto: ${numero}
+
+    📝 Consulta:
+    ${detalle}
+
+        Quedo atento/a a su respuesta.
+        Muchas gracias.`;
+
+      window.open(
+        `https://wa.me/56935226409?text=${encodeURIComponent(mensaje)}`,
+        "_blank"
+      );
+    });
+  });
+</script>
+<style>
+  .pagina {
+    min-height: 100vh;
+    background: #000;
+    color: white;
+    padding: 70px 22px;
+  }
+
+  .contenedor {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .kicker {
+    color: #ffc400;
+    font-weight: 900;
+    letter-spacing: 6px;
+    font-size: 13px;
+  }
+
+  h1 {
+    margin: 14px 0 0;
+    font-size: 52px;
+    font-weight: 1000;
+  }
+
+  .intro {
+    margin-top: 20px;
+    color: #bdbdbd;
+    line-height: 1.8;
+    max-width: 760px;
+  }
+
+  .grid {
+    margin-top: 48px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+  }
+
+  .card {
+    background: #171717;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 30px;
+    padding: 30px;
+  }
+
+  h2 {
+    margin: 0 0 24px;
+    color: #ffc400;
+    font-size: 28px;
+  }
+
+  .datos {
+    display: grid;
+    gap: 18px;
+    color: #d6d6d6;
+    line-height: 1.7;
+  }
+
+  .datos strong {
+    color: white;
+  }
+
+  .btn,
+  button {
+    margin-top: 28px;
+    width: fit-content;
+    border: none;
+    display: inline-flex;
+    background: #ffc400;
+    color: #000;
+    padding: 16px 24px;
+    border-radius: 16px;
+    font-weight: 1000;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  form {
+    display: grid;
+    gap: 18px;
+  }
+
+  input,
+  textarea {
+    width: 100%;
+    border: 1px solid rgba(255,255,255,.12);
+    background: #000;
+    color: white;
+    border-radius: 20px;
+    padding: 18px;
+    font-size: 15px;
+    outline: none;
+  }
+
+  input:focus,
+  textarea:focus {
+    border-color: #ffc400;
+  }
+
+  textarea {
+    resize: vertical;
+  }
+
+  @media (max-width: 800px) {
+    .grid {
+      grid-template-columns: 1fr;
+    }
+
+    h1 {
+      font-size: 38px;
+    }
+  }
+</style>
