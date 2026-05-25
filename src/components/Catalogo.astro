@@ -87,6 +87,12 @@
     return p.imagen_url || (p.imagen_local ? `/${p.imagen_local}` : "/img/logo.png");
   }
 
+  function detallePerfumeUrl(p) {
+    if (p.id) return `/perfume?id=${encodeURIComponent(p.id)}`;
+    if (p.slug) return `/perfume?slug=${encodeURIComponent(p.slug)}`;
+    return "#";
+  }
+
   function crearCard(p) {
     const article = document.createElement("article");
     article.className = "card perfume-card";
@@ -141,7 +147,7 @@
           <strong>${p.tipo_fragancia || "No especificado"}</strong>
         </div>
 
-        <a class="detalle-boton" href="${p.slug ? `/perfume/${p.slug}` : "#"}">
+        <a class="detalle-boton" href="${detallePerfumeUrl(p)}">
           Ver detalles
         </a>
       </div>

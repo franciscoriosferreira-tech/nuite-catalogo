@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/perfume/:slug",
+      "destination": "/perfume?slug=:slug"
+    }
+  ]
+}

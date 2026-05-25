@@ -151,6 +151,18 @@ const perfumesJson = JSON.stringify(perfumes);
 
     }
 
+    function detallePerfumeUrl(perfume) {
+
+      if (perfume.id)
+        return `/perfume?id=${encodeURIComponent(perfume.id)}`;
+
+      if (perfume.slug)
+        return `/perfume?slug=${encodeURIComponent(perfume.slug)}`;
+
+      return "#";
+
+    }
+
     function mostrarPerfumes(lista, titulo) {
 
       respuestaBot.innerHTML = `
@@ -200,11 +212,7 @@ const perfumesJson = JSON.stringify(perfumes);
 
               </div>
 
-              <a href="${
-                perfume.slug
-                  ? `/perfume/${perfume.slug}`
-                  : "#"
-              }">
+              <a href="${detallePerfumeUrl(perfume)}">
                 Ver perfume
               </a>
 

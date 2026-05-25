@@ -1,0 +1,441 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Navegacion from '../../components/Navegacion.astro';
+---
+
+<Layout title="Detalle perfume | Nuite Perfumes">
+  <Navegacion />
+
+  <main class="detalle">
+    <div class="wrap">
+      <a href="/#catalogo" class="volver">
+        Volver al catalogo
+      </a>
+
+      <div id="estadoCarga" class="not-found">
+        <h1>Cargando perfume...</h1>
+        <p>Estamos buscando la informacion actualizada del producto.</p>
+      </div>
+
+      <section id="detallePerfume" class="grid-detalle oculto">
+        <div class="foto">
+          <img id="imagenPerfume" src="/img/logo.png" alt="Perfume" />
+        </div>
+
+        <div class="info">
+          <p id="marcaPerfume" class="marca"></p>
+
+          <h1 id="nombrePerfume"></h1>
+
+          <p id="descripcionPerfume" class="descripcion"></p>
+
+          <div class="notas">
+            <h2>NOTAS OLFATIVAS</h2>
+
+            <div class="notas-grid">
+              <div>
+                <span>SALIDA</span>
+                <strong id="notaSalida">No especificado</strong>
+              </div>
+
+              <div>
+                <span>CORAZON</span>
+                <strong id="notaCorazon">No especificado</strong>
+              </div>
+
+              <div>
+                <span>FONDO</span>
+                <strong id="notaFondo">No especificado</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="precioBox">
+            <span>PRECIO</span>
+            <strong id="precioPerfume">$0</strong>
+          </div>
+
+          <div class="datos">
+            <div>
+              <span>TAMANO</span>
+              <strong id="tamanoPerfume">100 ml</strong>
+            </div>
+
+            <div>
+              <span>GENERO</span>
+              <strong id="generoPerfume">Unisex</strong>
+            </div>
+
+            <div>
+              <span>FRAGANCIA</span>
+              <strong id="fraganciaPerfume">No especificado</strong>
+            </div>
+
+            <div>
+              <span>STOCK</span>
+              <strong id="stockPerfume" class="stock ok">Disponible</strong>
+            </div>
+          </div>
+
+          <a id="whatsappPerfume" class="whatsapp" target="_blank" rel="noreferrer">
+            Comprar por WhatsApp
+          </a>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script is:inline type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+    const supabase = createClient(
+      "https://anawpjjrtxzutillpnoz.supabase.co",
+      "sb_publishable_s9BoS3q6FoCAHZ9BdPgH3g_uuR7UtNZ"
+    );
+
+    const $ = (selector) => document.querySelector(selector);
+
+    const formatPrice = (price) =>
+      new Intl.NumberFormat("es-CL", {
+        style: "currency",
+        currency: "CLP",
+        maximumFractionDigits: 0,
+      }).format(price || 0);
+
+    function obtenerReferenciaPerfume() {
+      const params = new URLSearchParams(window.location.search);
+      const idQuery = params.get("id");
+      const slugQuery = params.get("slug");
+
+      if (idQuery) return { id: idQuery, slug: "" };
+      if (slugQuery) return { id: "", slug: slugQuery };
+
+      const slugRuta = window.location.pathname
+        .replace(/^\/perfume\/?/, "")
+        .replace(/\/$/, "");
+
+      return { id: "", slug: decodeURIComponent(slugRuta || "") };
+    }
+
+    function imagenPerfume(perfume) {
+      return perfume.imagen_url ||
+        (perfume.imagen_local ? `/${perfume.imagen_local}` : "/img/logo.png");
+    }
+
+    function normalizarNotas(valor) {
+      if (!valor) return {};
+      if (typeof valor === "object") return valor;
+
+      try {
+        return JSON.parse(valor);
+      } catch {
+        return {};
+      }
+    }
+
+    function mostrarEstado(titulo, texto) {
+      $("#detallePerfume").classList.add("oculto");
+      $("#estadoCarga").classList.remove("oculto");
+      $("#estadoCarga").innerHTML = `
+        <h1>${titulo}</h1>
+        <p>${texto}</p>
+      `;
+    }
+
+    function renderPerfume(perfume) {
+      const notas = normalizarNotas(perfume.notas);
+      const stock = Number(perfume.stock || 0);
+      const imagen = imagenPerfume(perfume);
+
+      document.title = `${perfume.nombre || "Perfume"} | Nuite Perfumes`;
+
+      $("#estadoCarga").classList.add("oculto");
+      $("#detallePerfume").classList.remove("oculto");
+
+      $("#imagenPerfume").src = imagen;
+      $("#imagenPerfume").alt = perfume.nombre || "Perfume";
+      $("#imagenPerfume").onerror = () => {
+        $("#imagenPerfume").src = "/img/logo.png";
+      };
+
+      $("#marcaPerfume").textContent = perfume.marca || "";
+      $("#nombrePerfume").textContent = perfume.nombre || "Perfume sin nombre";
+      $("#descripcionPerfume").textContent =
+        perfume.descripcion || "Perfume disponible en Nuite Perfumes.";
+      $("#notaSalida").textContent = notas.salida || "No especificado";
+      $("#notaCorazon").textContent = notas.corazon || "No especificado";
+      $("#notaFondo").textContent = notas.fondo || "No especificado";
+      $("#precioPerfume").textContent =
+        formatPrice(perfume.precio || perfume.precio_sugerido);
+      $("#tamanoPerfume").textContent = `${perfume.ml || 100} ml`;
+      $("#generoPerfume").textContent = perfume.genero || "Unisex";
+      $("#fraganciaPerfume").textContent =
+        perfume.tipo_fragancia || "No especificado";
+
+      const stockPerfume = $("#stockPerfume");
+      stockPerfume.textContent =
+        stock > 0 ? `${stock} Disponible` : "Agotado";
+      stockPerfume.className = stock > 0 ? "stock ok" : "stock no";
+
+      $("#whatsappPerfume").href =
+        `https://wa.me/56935226409?text=${encodeURIComponent(
+          `Hola, quiero comprar ${perfume.nombre || "este perfume"} de ${perfume.marca || "Nuite"}`
+        )}`;
+    }
+
+    async function cargarPerfume() {
+      const referencia = obtenerReferenciaPerfume();
+
+      if (!referencia.id && !referencia.slug) {
+        mostrarEstado(
+          "Perfume no encontrado",
+          "Vuelve al catalogo y selecciona un producto disponible."
+        );
+        return;
+      }
+
+      let query = supabase
+        .from("perfumes")
+        .select("*")
+        .eq("activo", true);
+
+      if (referencia.id) {
+        query = query.eq("id", referencia.id);
+      } else {
+        query = query.eq("slug", referencia.slug);
+      }
+
+      const { data, error } = await query
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        console.error(error);
+        mostrarEstado(
+          "No se pudo cargar el perfume",
+          "Intenta recargar la pagina en unos segundos."
+        );
+        return;
+      }
+
+      if (!data) {
+        mostrarEstado(
+          "Perfume no encontrado",
+          "Este perfume no existe, esta agotado o fue desactivado."
+        );
+        return;
+      }
+
+      renderPerfume(data);
+    }
+
+    cargarPerfume();
+  </script>
+
+  <style>
+    .detalle {
+      background: #000;
+      min-height: 100vh;
+      color: white;
+      padding: 34px 22px 60px;
+    }
+
+    .wrap {
+      max-width: 1180px;
+      margin: 0 auto;
+    }
+
+    .oculto {
+      display: none !important;
+    }
+
+    .volver {
+      display: inline-flex;
+      margin-bottom: 28px;
+      color: var(--gold);
+      font-weight: 900;
+      font-size: 15px;
+    }
+
+    .grid-detalle {
+      display: grid;
+      grid-template-columns: .85fr 1fr;
+      gap: 38px;
+      align-items: start;
+    }
+
+    .foto {
+      border-radius: 24px;
+      overflow: hidden;
+      background: #111;
+    }
+
+    .foto img {
+      width: 100%;
+      height: 580px;
+      object-fit: cover;
+    }
+
+    .marca {
+      color: var(--gold);
+      font-size: 13px;
+      font-weight: 900;
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      margin: 0 0 12px;
+    }
+
+    h1 {
+      font-size: clamp(34px, 4vw, 50px);
+      margin: 0;
+      line-height: 1;
+      font-weight: 1000;
+      text-shadow: 2px 2px 0 rgba(0,120,255,.35);
+    }
+
+    .descripcion {
+      color: var(--muted);
+      font-size: 17px;
+      line-height: 1.55;
+      margin: 18px 0 22px;
+    }
+
+    .notas {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+
+    .notas h2 {
+      margin: 0 0 16px;
+      color: var(--gold);
+      letter-spacing: 5px;
+      font-size: 14px;
+    }
+
+    .notas-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .notas-grid div,
+    .datos div {
+      background: #070707;
+      border-radius: 15px;
+      padding: 16px;
+    }
+
+    span {
+      display: block;
+      color: #888;
+      font-size: 11px;
+      margin-bottom: 8px;
+    }
+
+    strong {
+      font-size: 15px;
+      line-height: 1.45;
+    }
+
+    .precioBox {
+      margin-bottom: 20px;
+    }
+
+    .precioBox strong {
+      display: block;
+      color: var(--gold);
+      font-size: 38px;
+      line-height: 1;
+    }
+
+    .datos {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .datos div {
+      background: var(--card);
+      border: 1px solid var(--border);
+    }
+
+    .stock.ok {
+      color: #00e69a;
+    }
+
+    .stock.no {
+      color: #ff5b5b;
+    }
+
+    .whatsapp {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--gold);
+      color: #000;
+      padding: 16px 22px;
+      border-radius: 16px;
+      font-size: 15px;
+      font-weight: 1000;
+      width: fit-content;
+      min-width: 280px;
+      margin: 0 auto;
+      transition: .25s;
+    }
+
+    .whatsapp:hover {
+      transform: translateY(-2px);
+      background: #ffd84d;
+    }
+
+    .not-found {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 32px;
+    }
+
+    @media (max-width: 950px) {
+      .grid-detalle {
+        grid-template-columns: 1fr;
+        gap: 28px;
+      }
+
+      .foto img {
+        height: 430px;
+      }
+
+      .notas-grid,
+      .datos {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 520px) {
+      .detalle {
+        padding: 22px 14px 48px;
+      }
+
+      .foto img {
+        height: 340px;
+      }
+
+      .notas {
+        padding: 16px;
+      }
+
+      .precioBox strong {
+        font-size: 32px;
+      }
+
+      .whatsapp {
+        width: 100%;
+        min-width: unset;
+      }
+    }
+  </style>
+</Layout>
