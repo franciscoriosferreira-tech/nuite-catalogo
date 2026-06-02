@@ -42,6 +42,44 @@
           Limpiar filtros
         </button>
       </div>
+
+      <div class="aroma-filtros" aria-label="Filtrar por familia aromática">
+        <button class="aroma-chip activo" type="button" data-aroma="">
+          Todos
+        </button>
+
+        <button class="aroma-chip" type="button" data-aroma="dulce">
+          Dulce
+        </button>
+
+        <button class="aroma-chip" type="button" data-aroma="amaderada">
+          Amaderada
+        </button>
+
+        <button class="aroma-chip" type="button" data-aroma="citrica">
+          Cítrica
+        </button>
+
+        <button class="aroma-chip" type="button" data-aroma="fresca">
+          Fresca
+        </button>
+
+        <button class="aroma-chip" type="button" data-aroma="floral">
+          Floral
+        </button>
+
+        <button class="aroma-chip" type="button" data-aroma="frutal">
+          Frutal
+        </button>
+
+        <button class="aroma-chip" type="button" data-aroma="especiada">
+          Especiada
+        </button>
+
+        <button class="aroma-chip" type="button" data-aroma="oriental">
+          Oriental
+        </button>
+      </div>
     </div>
 
     <div class="grid" id="gridPerfumes"></div>
@@ -54,8 +92,13 @@
   </div>
 </section>
 
-<script is:inline type="module">
-  import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+<script type="module">
+  import { createClient } from "@supabase/supabase-js";
+  import {
+    PERFUME_PUBLIC_FIELDS,
+    aplicarCorreccionPerfume,
+    normalizarNotasPerfume,
+  } from "../data/perfumeCorrections";
 
   const supabase = createClient(
     "https://anawpjjrtxzutillpnoz.supabase.co",
@@ -67,6 +110,7 @@
   const filtroGenero = document.querySelector("#filtroGenero");
   const ordenar = document.querySelector("#ordenar");
   const limpiar = document.querySelector("#limpiar");
+  const aromaBotones = document.querySelectorAll("[data-aroma]");
   const contador = document.querySelector("#contador");
   const sinResultados = document.querySelector("#sinResultados");
   const paginacion = document.querySelector("#paginacion");
@@ -74,7 +118,114 @@
 
   let perfumes = [];
   let paginaActual = 1;
+  let filtroAroma = "";
   const porPagina = 12;
+
+  const familiasAroma = {
+    dulce: [
+      "dulce",
+      "gourmand",
+      "vainilla",
+      "avainillado",
+      "azucar",
+      "caramelo",
+      "praline",
+      "malvavisco",
+      "chocolate",
+      "crema",
+      "tonka",
+    ],
+    amaderada: [
+      "amaderado",
+      "amaderada",
+      "madera",
+      "cedro",
+      "sandalo",
+      "vetiver",
+      "pachuli",
+      "patchouli",
+      "oud",
+      "cuero",
+      "cashmere",
+    ],
+    citrica: [
+      "citrico",
+      "citrica",
+      "limon",
+      "bergamota",
+      "mandarina",
+      "naranja",
+      "pomelo",
+      "toronja",
+    ],
+    fresca: [
+      "fresco",
+      "fresh",
+      "menta",
+      "acuatico",
+      "acuaticos",
+      "limpio",
+      "verde",
+      "lavanda marina",
+    ],
+    floral: [
+      "floral",
+      "flor",
+      "jazmin",
+      "rosa",
+      "gardenia",
+      "nardo",
+      "orquidea",
+      "ylang",
+      "geranio",
+      "frangipani",
+      "violeta",
+      "peonia",
+    ],
+    frutal: [
+      "frutal",
+      "afrutado",
+      "afrutados",
+      "fruta",
+      "frutas",
+      "manzana",
+      "pera",
+      "mango",
+      "frutilla",
+      "fresa",
+      "cereza",
+      "durazno",
+      "pina",
+      "coco",
+      "tropical",
+      "bayas",
+      "grosella",
+      "frambuesa",
+    ],
+    especiada: [
+      "especiado",
+      "especiada",
+      "calido",
+      "pimienta",
+      "cardamomo",
+      "canela",
+      "jengibre",
+      "azafran",
+      "nuez moscada",
+      "romero",
+    ],
+    oriental: [
+      "oriental",
+      "ambar",
+      "incienso",
+      "resina",
+      "benzoin",
+      "benjui",
+      "oud",
+      "almizcle",
+      "ladano",
+    ],
+  };
 
   const formatPrice = (price) =>
     new Intl.NumberFormat("es-CL", {
@@ -93,6 +244,32 @@
     return "#";
   }
 
+  function normalizarTexto(valor) {
+    return String(valor || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase();
+  }
+
+  function textoAromatico(perfume) {
+    const notas = normalizarNotasPerfume(perfume.notas);
+
+    return normalizarTexto([
+      perfume.tipo_fragancia,
+      notas.salida,
+      notas.corazon,
+      notas.fondo,
+      perfume.descripcion,
+    ].join(" "));
+  }
+
+  function coincideFamiliaAroma(perfume, familia) {
+    const palabras = familiasAroma[familia] || [];
+    const texto = textoAromatico(perfume);
+
+    return palabras.some((palabra) => texto.includes(palabra));
+  }
+
   function crearCard(p) {
     const article = document.createElement("article");
     article.className = "card perfume-card";
@@ -104,7 +281,12 @@
 
     article.innerHTML = `
       <div class="imgbox">
-        <img src="${imagenPerfume(p)}" alt="${p.nombre || "Perfume"}" />
+        <img
+          src="${imagenPerfume(p)}"
+          alt="${p.nombre || "Perfume"}"
+          loading="lazy"
+          decoding="async"
+        />
 
         <span class="tag">
           ${p.tipo_fragancia || "Fragancia"}
@@ -187,8 +369,10 @@
 
       const coincideMarca = !marca || marcaCard === marca;
       const coincideGenero = !genero || generoCard === genero;
+      const coincideAroma =
+        !filtroAroma || coincideFamiliaAroma(p, filtroAroma);
 
-      return coincideTexto && coincideMarca && coincideGenero;
+      return coincideTexto && coincideMarca && coincideGenero && coincideAroma;
     });
 
     if (ordenar.value === "menor") {
@@ -268,7 +452,7 @@
 
     const { data, error } = await supabase
       .from("perfumes")
-      .select("*")
+      .select(PERFUME_PUBLIC_FIELDS)
       .eq("activo", true)
       .gt("stock", 0)
       .order("nombre");
@@ -279,7 +463,7 @@
       return;
     }
 
-    perfumes = data || [];
+    perfumes = (data || []).map(aplicarCorreccionPerfume);
     cargarMarcas();
     renderizar();
   }
@@ -289,11 +473,29 @@
   filtroGenero.addEventListener("change", resetear);
   ordenar.addEventListener("change", resetear);
 
+  aromaBotones.forEach((boton) => {
+    boton.addEventListener("click", () => {
+      filtroAroma = boton.dataset.aroma || "";
+
+      aromaBotones.forEach((item) => {
+        item.classList.toggle("activo", item === boton);
+      });
+
+      resetear();
+    });
+  });
+
   limpiar.addEventListener("click", () => {
     buscador.value = "";
     filtroMarca.value = "";
     filtroGenero.value = "";
     ordenar.value = "";
+    filtroAroma = "";
+
+    aromaBotones.forEach((boton) => {
+      boton.classList.toggle("activo", boton.dataset.aroma === "");
+    });
+
     paginaActual = 1;
     renderizar();
   });
@@ -305,7 +507,7 @@
   .catalogo {
     background: #000;
     min-height: 100vh;
-    padding: 70px 24px;
+    padding: 42px 24px 70px;
     color: white;
   }
 
@@ -390,6 +592,41 @@
     color: #000;
     font-weight: 1000;
     cursor: pointer;
+  }
+
+  .aroma-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid rgba(255,255,255,.08);
+  }
+
+  .aroma-chip {
+    min-height: 42px;
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 999px;
+    background: #0b0b0b;
+    color: #d8d8d8;
+    padding: 0 18px;
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: .25s;
+  }
+
+  .aroma-chip:hover {
+    color: #fff;
+    border-color: rgba(255,196,0,.55);
+    transform: translateY(-1px);
+  }
+
+  .aroma-chip.activo {
+    background: #ffc400;
+    color: #000;
+    border-color: #ffc400;
+    box-shadow: 0 0 18px rgba(255,196,0,.22);
   }
 
   .grid {
@@ -633,7 +870,7 @@
 
   @media (max-width: 720px) {
     .catalogo {
-      padding: 42px 16px;
+      padding: 28px 16px 42px;
     }
 
     .grid {
@@ -643,6 +880,24 @@
 
     .fila-filtros {
       grid-template-columns: 1fr;
+    }
+
+    .aroma-filtros {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+
+    .aroma-filtros::-webkit-scrollbar {
+      display: none;
+    }
+
+    .aroma-chip {
+      flex: 0 0 auto;
+      min-height: 40px;
+      padding: 0 15px;
+      font-size: 13px;
     }
 
     .filtros {

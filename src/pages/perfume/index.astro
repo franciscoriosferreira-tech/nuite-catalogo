@@ -19,7 +19,12 @@ import Navegacion from '../../components/Navegacion.astro';
 
       <section id="detallePerfume" class="grid-detalle oculto">
         <div class="foto">
-          <img id="imagenPerfume" src="/img/logo.png" alt="Perfume" />
+          <img
+            id="imagenPerfume"
+            src="/img/logo.png"
+            alt="Perfume"
+            decoding="async"
+          />
         </div>
 
         <div class="info">
@@ -85,8 +90,13 @@ import Navegacion from '../../components/Navegacion.astro';
     </div>
   </main>
 
-  <script is:inline type="module">
-    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+  <script type="module">
+    import { createClient } from "@supabase/supabase-js";
+    import {
+      PERFUME_PUBLIC_FIELDS,
+      aplicarCorreccionPerfume,
+      normalizarNotasPerfume,
+    } from "../../data/perfumeCorrections";
 
     const supabase = createClient(
       "https://anawpjjrtxzutillpnoz.supabase.co",
@@ -122,17 +132,6 @@ import Navegacion from '../../components/Navegacion.astro';
         (perfume.imagen_local ? `/${perfume.imagen_local}` : "/img/logo.png");
     }
 
-    function normalizarNotas(valor) {
-      if (!valor) return {};
-      if (typeof valor === "object") return valor;
-
-      try {
-        return JSON.parse(valor);
-      } catch {
-        return {};
-      }
-    }
-
     function mostrarEstado(titulo, texto) {
       $("#detallePerfume").classList.add("oculto");
       $("#estadoCarga").classList.remove("oculto");
@@ -143,7 +142,7 @@ import Navegacion from '../../components/Navegacion.astro';
     }
 
     function renderPerfume(perfume) {
-      const notas = normalizarNotas(perfume.notas);
+      const notas = normalizarNotasPerfume(perfume.notas);
       const stock = Number(perfume.stock || 0);
       const imagen = imagenPerfume(perfume);
 
@@ -196,7 +195,7 @@ import Navegacion from '../../components/Navegacion.astro';
 
       let query = supabase
         .from("perfumes")
-        .select("*")
+        .select(PERFUME_PUBLIC_FIELDS)
         .eq("activo", true);
 
       if (referencia.id) {
@@ -226,7 +225,7 @@ import Navegacion from '../../components/Navegacion.astro';
         return;
       }
 
-      renderPerfume(data);
+      renderPerfume(aplicarCorreccionPerfume(data));
     }
 
     cargarPerfume();

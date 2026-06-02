@@ -1,5 +1,9 @@
 ---
 import { createClient } from '@supabase/supabase-js';
+import {
+  PERFUME_PUBLIC_FIELDS,
+  aplicarCorreccionPerfume,
+} from '../data/perfumeCorrections';
 
 const supabase = createClient(
   'https://anawpjjrtxzutillpnoz.supabase.co',
@@ -8,12 +12,12 @@ const supabase = createClient(
 
 const { data } = await supabase
   .from('perfumes')
-  .select('*')
+  .select(PERFUME_PUBLIC_FIELDS)
   .eq('activo', true)
   .gt('stock', 0)
   .order('nombre');
 
-const perfumes = data || [];
+const perfumes = (data || []).map(aplicarCorreccionPerfume);
 const perfumesJson = JSON.stringify(perfumes);
 ---
 
@@ -181,6 +185,8 @@ const perfumesJson = JSON.stringify(perfumes);
             <img
               src="${imagenPerfume(perfume)}"
               alt="${perfume.nombre}"
+              loading="lazy"
+              decoding="async"
             />
 
             <div>
