@@ -1,11 +1,43 @@
 ---
 ---
 
+<section class="discovery" aria-labelledby="favoritos-title">
+  <div class="discovery-wrap">
+    <div class="section-heading">
+      <div>
+        <p class="section-kicker">Selección Nuite</p>
+        <h2 id="favoritos-title">Favoritos del momento</h2>
+      </div>
+      <a href="#catalogo">Ver todo el catálogo <span>→</span></a>
+    </div>
+
+    <div class="trend-grid" id="trendGrid" aria-live="polite">
+      {Array.from({ length: 6 }).map(() => (
+        <div class="trend-skeleton" aria-hidden="true"></div>
+      ))}
+    </div>
+  </div>
+</section>
+
+<section class="featured-brands" aria-labelledby="brands-title">
+  <div class="discovery-wrap">
+    <div class="section-heading section-heading-dark">
+      <div>
+        <p class="section-kicker">Encuentra tu estilo</p>
+        <h2 id="brands-title">Marcas destacadas</h2>
+      </div>
+      <p>Explora las casas con mayor variedad disponible en Nuite.</p>
+    </div>
+
+    <div class="brand-showcase" id="brandShowcase" aria-live="polite"></div>
+  </div>
+</section>
+
 <section class="catalogo" id="catalogo">
   <div class="wrap">
-    <p class="kicker">INVENTARIO DISPONIBLE</p>
+    <p class="catalog-kicker">Inventario disponible</p>
 
-    <h1>Catálogo de perfumes</h1>
+    <h2 class="catalog-title">Todos los perfumes</h2>
 
     <p class="intro">
       Explora fragancias disponibles con información clave como tamaño,
@@ -93,17 +125,14 @@
 </section>
 
 <script>
-  import { createClient } from "@supabase/supabase-js";
   import {
     PERFUME_PUBLIC_FIELDS,
     aplicarCorreccionPerfume,
     normalizarNotasPerfume,
   } from "../data/perfumeCorrections";
 
-  const supabase = createClient(
-    "https://anawpjjrtxzutillpnoz.supabase.co",
-    "sb_publishable_s9BoS3q6FoCAHZ9BdPgH3g_uuR7UtNZ"
-  );
+  const SUPABASE_URL = "https://anawpjjrtxzutillpnoz.supabase.co";
+  const SUPABASE_KEY = "sb_publishable_s9BoS3q6FoCAHZ9BdPgH3g_uuR7UtNZ";
 
   const buscador = document.querySelector("#buscador");
   const filtroMarca = document.querySelector("#filtroMarca");
@@ -115,6 +144,8 @@
   const sinResultados = document.querySelector("#sinResultados");
   const paginacion = document.querySelector("#paginacion");
   const grid = document.querySelector("#gridPerfumes");
+  const trendGrid = document.querySelector("#trendGrid");
+  const brandShowcase = document.querySelector("#brandShowcase");
 
   let perfumes = [];
   let paginaActual = 1;
@@ -338,6 +369,88 @@
     return article;
   }
 
+  function crearTrendCard(p) {
+    const enlace = document.createElement("a");
+    enlace.className = "trend-card";
+    enlace.href = detallePerfumeUrl(p);
+    enlace.innerHTML = `
+      <div class="trend-image">
+        <img
+          src="${imagenPerfume(p)}"
+          alt="${p.nombre || "Perfume"}"
+          width="420"
+          height="520"
+          loading="lazy"
+          decoding="async"
+        />
+        <span>${p.genero || "Unisex"}</span>
+      </div>
+      <div class="trend-body">
+        <small>${p.marca || "Nuite Perfumes"}</small>
+        <strong>${p.nombre || "Perfume"}</strong>
+        <b>${formatPrice(p.precio || 0)}</b>
+      </div>
+    `;
+    return enlace;
+  }
+
+  function renderizarFavoritos() {
+    if (!trendGrid) return;
+
+    const favoritos = [...perfumes]
+      .sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0))
+      .slice(0, 8);
+
+    trendGrid.innerHTML = "";
+    favoritos.forEach((perfume) => trendGrid.appendChild(crearTrendCard(perfume)));
+  }
+
+  function renderizarMarcasDestacadas() {
+    if (!brandShowcase) return;
+
+    const grupos = perfumes.reduce((acumulado, perfume) => {
+      if (!perfume.marca) return acumulado;
+      acumulado[perfume.marca] ||= [];
+      acumulado[perfume.marca].push(perfume);
+      return acumulado;
+    }, {});
+
+    const destacadas = Object.entries(grupos)
+      .sort(([, productosA], [, productosB]) => productosB.length - productosA.length)
+      .slice(0, 3);
+
+    brandShowcase.innerHTML = "";
+
+    destacadas.forEach(([marca, productos], indice) => {
+      const enlace = document.createElement("a");
+      const muestras = productos.slice(0, 3);
+      enlace.className = `brand-feature brand-feature-${indice + 1}`;
+      enlace.href = `/?marca=${encodeURIComponent(marca)}#catalogo`;
+      enlace.innerHTML = `
+        <div class="brand-products">
+          ${muestras.map((producto, posicion) => `
+            <img
+              class="brand-product brand-product-${posicion + 1}"
+              src="${imagenPerfume(producto)}"
+              alt=""
+              width="420"
+              height="520"
+              loading="lazy"
+              decoding="async"
+            />
+          `).join("")}
+        </div>
+        <div class="brand-feature-copy">
+          <span>Descubre</span>
+          <strong>${marca}</strong>
+          <small>${productos.length} perfumes disponibles</small>
+          <b>Ver la marca →</b>
+        </div>
+      `;
+      brandShowcase.appendChild(enlace);
+    });
+  }
+
   function cargarMarcas() {
     const marcas = [...new Set(perfumes.map((p) => p.marca).filter(Boolean))];
 
@@ -349,6 +462,15 @@
       option.textContent = marca;
       filtroMarca.appendChild(option);
     });
+
+    const params = new URLSearchParams(window.location.search);
+    const marcaParam = params.get("marca");
+    const generoParam = params.get("genero");
+    const buscarParam = params.get("buscar");
+
+    if (marcaParam && marcas.includes(marcaParam)) filtroMarca.value = marcaParam;
+    if (generoParam) filtroGenero.value = generoParam;
+    if (buscarParam) buscador.value = buscarParam;
   }
 
   function obtenerFiltradas() {
@@ -450,25 +572,45 @@
   async function cargarPerfumesDesdeSupabase() {
     contador.textContent = "Cargando perfumes disponibles...";
 
-    const { data, error } = await supabase
-      .from("perfumes")
-      .select(PERFUME_PUBLIC_FIELDS)
-      .eq("activo", true)
-      .gt("stock", 0)
-      .order("nombre");
+    const parametros = new URLSearchParams({
+      select: PERFUME_PUBLIC_FIELDS,
+      activo: "eq.true",
+      stock: "gt.0",
+      order: "nombre.asc",
+    });
 
-    if (error) {
+    try {
+      const respuesta = await fetch(
+        `${SUPABASE_URL}/rest/v1/perfumes?${parametros}`,
+        {
+          headers: {
+            apikey: SUPABASE_KEY,
+            Authorization: `Bearer ${SUPABASE_KEY}`,
+          },
+        }
+      );
+
+      if (!respuesta.ok) throw new Error(`Supabase respondió ${respuesta.status}`);
+
+      const data = await respuesta.json();
+      perfumes = (data || []).map(aplicarCorreccionPerfume);
+      cargarMarcas();
+      renderizarFavoritos();
+      renderizarMarcasDestacadas();
+      renderizar();
+    } catch (error) {
       console.error(error);
       contador.textContent = "No se pudo cargar el catálogo.";
-      return;
+      trendGrid.innerHTML = '<p class="section-status">No pudimos cargar los favoritos.</p>';
+      brandShowcase.innerHTML = '<p class="section-status">No pudimos cargar las marcas destacadas.</p>';
     }
-
-    perfumes = (data || []).map(aplicarCorreccionPerfume);
-    cargarMarcas();
-    renderizar();
   }
 
-  buscador.addEventListener("input", resetear);
+  let temporizadorBusqueda;
+  buscador.addEventListener("input", () => {
+    window.clearTimeout(temporizadorBusqueda);
+    temporizadorBusqueda = window.setTimeout(resetear, 120);
+  });
   filtroMarca.addEventListener("change", resetear);
   filtroGenero.addEventListener("change", resetear);
   ordenar.addEventListener("change", resetear);
@@ -500,10 +642,316 @@
     renderizar();
   });
 
+  window.addEventListener("nuite:buscar", (event) => {
+    buscador.value = event.detail || "";
+    paginaActual = 1;
+    renderizar();
+    buscador.focus({ preventScroll: true });
+  });
+
   cargarPerfumesDesdeSupabase();
 </script>
 
 <style is:global>
+  .discovery,
+  .featured-brands {
+    padding: 88px 24px;
+  }
+
+  .discovery {
+    background: #f5f3ed;
+    color: #111;
+  }
+
+  .featured-brands {
+    background: #090909;
+    color: #fff;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .discovery-wrap {
+    max-width: 1380px;
+    margin: 0 auto;
+  }
+
+  .section-heading {
+    margin-bottom: 34px;
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 28px;
+  }
+
+  .section-kicker {
+    margin: 0 0 10px;
+    color: #806200;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .section-heading h2 {
+    margin: 0;
+    font-size: clamp(34px, 4vw, 54px);
+    line-height: 1;
+    letter-spacing: -0.045em;
+  }
+
+  .section-heading > a {
+    color: #111;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .section-heading > a span {
+    margin-left: 7px;
+    color: #806200;
+    font-size: 19px;
+  }
+
+  .section-heading-dark .section-kicker {
+    color: var(--gold);
+  }
+
+  .section-heading-dark > p {
+    max-width: 420px;
+    margin: 0;
+    color: #989898;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .trend-grid {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(210px, 1fr);
+    gap: 16px;
+    overflow-x: auto;
+    padding: 2px 2px 16px;
+    scroll-snap-type: x proximity;
+    scrollbar-color: #c9c4b7 transparent;
+  }
+
+  .trend-card {
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid #e1ddd2;
+    border-radius: 20px;
+    background: #fff;
+    color: #111;
+    scroll-snap-align: start;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .trend-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 18px 44px rgba(40, 33, 10, 0.12);
+  }
+
+  .trend-image {
+    position: relative;
+    height: 260px;
+    overflow: hidden;
+    background: #f8f8f8;
+  }
+
+  .trend-image img {
+    width: 100%;
+    height: 100%;
+    padding: 18px;
+    object-fit: contain;
+    transition: transform 0.35s ease;
+  }
+
+  .trend-card:hover .trend-image img {
+    transform: scale(1.035);
+  }
+
+  .trend-image span {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    padding: 6px 9px;
+    border-radius: 999px;
+    background: rgba(10, 10, 10, 0.88);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+
+  .trend-body {
+    min-height: 142px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .trend-body small {
+    color: #877018;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .trend-body strong {
+    margin-top: 7px;
+    display: -webkit-box;
+    overflow: hidden;
+    font-size: 15px;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .trend-body b {
+    margin-top: auto;
+    padding-top: 14px;
+    font-size: 17px;
+  }
+
+  .trend-skeleton {
+    height: 404px;
+    border-radius: 20px;
+    background: linear-gradient(100deg, #e9e5db 20%, #f4f1ea 40%, #e9e5db 60%);
+    background-size: 200% 100%;
+    animation: trend-loading 1.2s ease-in-out infinite;
+  }
+
+  .section-status {
+    margin: 0;
+    padding: 24px;
+    border: 1px solid currentColor;
+    border-radius: 18px;
+    color: #777;
+    font-size: 14px;
+  }
+
+  @keyframes trend-loading {
+    to { background-position: -200% 0; }
+  }
+
+  .brand-showcase {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .brand-feature {
+    position: relative;
+    min-height: 510px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.11);
+    border-radius: 30px;
+    background:
+      radial-gradient(circle at 50% 32%, rgba(255, 196, 0, 0.2), transparent 34%),
+      linear-gradient(150deg, #222, #0e0e0e 58%);
+    color: #fff;
+    isolation: isolate;
+  }
+
+  .brand-feature-2 {
+    background:
+      radial-gradient(circle at 50% 32%, rgba(143, 86, 255, 0.24), transparent 35%),
+      linear-gradient(150deg, #211a2d, #0e0e0e 60%);
+  }
+
+  .brand-feature-3 {
+    background:
+      radial-gradient(circle at 50% 32%, rgba(214, 76, 76, 0.22), transparent 35%),
+      linear-gradient(150deg, #2c1b1b, #0e0e0e 60%);
+  }
+
+  .brand-products {
+    position: relative;
+    height: 335px;
+    margin: 24px 20px 0;
+  }
+
+  .brand-product {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 54%;
+    height: 88%;
+    padding: 8px;
+    border-radius: 20px;
+    background: #fff;
+    object-fit: contain;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.38);
+    transform: translateX(-50%);
+  }
+
+  .brand-product-1 {
+    z-index: 3;
+  }
+
+  .brand-product-2,
+  .brand-product-3 {
+    bottom: 14px;
+    width: 43%;
+    height: 72%;
+    opacity: 0.82;
+  }
+
+  .brand-product-2 {
+    left: 25%;
+    transform: translateX(-50%) rotate(-8deg);
+  }
+
+  .brand-product-3 {
+    left: 75%;
+    transform: translateX(-50%) rotate(8deg);
+  }
+
+  .brand-feature-copy {
+    position: absolute;
+    z-index: 5;
+    right: 20px;
+    bottom: 20px;
+    left: 20px;
+    padding: 18px 20px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 4px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    background: rgba(5, 5, 5, 0.92);
+    backdrop-filter: blur(10px);
+  }
+
+  .brand-feature-copy span {
+    color: var(--gold);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+
+  .brand-feature-copy strong {
+    grid-column: 1;
+    font-size: 24px;
+    line-height: 1.1;
+  }
+
+  .brand-feature-copy small {
+    grid-column: 1;
+    margin-top: 3px;
+    color: #9b9b9b;
+    font-size: 11px;
+  }
+
+  .brand-feature-copy b {
+    grid-column: 2;
+    grid-row: 1 / 4;
+    align-self: center;
+    color: #fff;
+    font-size: 11px;
+  }
+
   .catalogo {
     background: #000;
     min-height: 100vh;
@@ -516,18 +964,21 @@
     margin: 0 auto;
   }
 
-  .kicker {
+  .catalog-kicker {
+    margin: 0;
     color: #ffc400;
     font-weight: 900;
-    letter-spacing: 8px;
-    font-size: 13px;
+    letter-spacing: 0.25em;
+    font-size: 11px;
+    text-transform: uppercase;
   }
 
-  h1 {
-    font-size: 56px;
+  .catalog-title {
+    font-size: clamp(38px, 5vw, 58px);
     margin: 16px 0 10px;
     font-weight: 1000;
     line-height: 1;
+    letter-spacing: -0.045em;
   }
 
   .intro {
@@ -641,6 +1092,8 @@
     border-radius: 30px;
     overflow: hidden;
     transition: .25s;
+    content-visibility: auto;
+    contain-intrinsic-size: 680px;
   }
 
   .card:hover {
@@ -711,13 +1164,13 @@
     gap: 14px;
   }
 
-  h2 {
+  .perfume-card h2 {
     font-size: 22px;
     margin: 0;
     line-height: 1.2;
   }
 
-  .brand {
+  .perfume-card .brand {
     color: #ffc400;
     font-weight: 900;
     margin: 8px 0 0;
@@ -754,7 +1207,7 @@
     padding: 18px;
   }
 
-  small {
+  .perfume-card small {
     display: block;
     color: #777;
     font-size: 11px;
@@ -859,6 +1312,15 @@
   }
 
   @media (max-width: 1100px) {
+    .brand-showcase {
+      grid-template-columns: repeat(2, 1fr);
+    }
+
+    .brand-feature:last-child {
+      grid-column: 1 / -1;
+      min-height: 470px;
+    }
+
     .grid {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -869,6 +1331,45 @@
   }
 
   @media (max-width: 720px) {
+    .discovery,
+    .featured-brands {
+      padding: 58px 16px;
+    }
+
+    .section-heading {
+      align-items: flex-start;
+      flex-direction: column;
+      margin-bottom: 26px;
+    }
+
+    .section-heading > a {
+      display: none;
+    }
+
+    .section-heading-dark > p {
+      font-size: 13px;
+    }
+
+    .trend-grid {
+      margin-right: -16px;
+      grid-auto-columns: 75vw;
+      padding-right: 16px;
+    }
+
+    .trend-image {
+      height: 290px;
+    }
+
+    .brand-showcase {
+      grid-template-columns: 1fr;
+    }
+
+    .brand-feature,
+    .brand-feature:last-child {
+      grid-column: auto;
+      min-height: 480px;
+    }
+
     .catalogo {
       padding: 28px 16px 42px;
     }
@@ -910,10 +1411,6 @@
       font-size: 15px;
     }
 
-    h1 {
-      font-size: 38px;
-    }
-
     .imgbox {
       height: 300px;
     }
@@ -930,6 +1427,21 @@
     .paginacion button {
       width: 46px;
       height: 46px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .trend-card,
+    .trend-image img,
+    .card,
+    .detalle-boton,
+    .aroma-chip,
+    .paginacion button {
+      transition: none;
+    }
+
+    .trend-skeleton {
+      animation: none;
     }
   }
 </style>
