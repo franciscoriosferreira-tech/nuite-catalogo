@@ -1,10 +1,8 @@
 <main class="hero">
-  <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
-  <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
 
   <div class="hero-inner">
     <div class="hero-copy">
-      <p class="eyebrow">Perfumería árabe y de autor</p>
+      <p class="eyebrow">Perfumería árabe</p>
       <h1>Tu próxima fragancia empieza con una sensación.</h1>
       <p class="hero-text">
         Descubre aromas con carácter, originales y disponibles en Chile. Te
@@ -99,9 +97,9 @@
     position: relative;
     overflow: hidden;
     background:
-      radial-gradient(circle at 78% 30%, rgba(255, 196, 0, 0.13), transparent 27%),
-      linear-gradient(135deg, #050505 0%, #101010 55%, #050505 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      linear-gradient(118deg, rgba(212, 175, 55, 0.16) 0%, transparent 28%),
+      linear-gradient(180deg, #030303 0%, #0a0906 52%, #020202 100%);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.2);
   }
 
   .hero-inner {
@@ -123,7 +121,7 @@
 
   .eyebrow {
     margin: 0 0 22px;
-    color: var(--gold);
+    color: var(--gold2);
     font-size: 12px;
     font-weight: 900;
     letter-spacing: 0.3em;
@@ -135,14 +133,16 @@
     margin: 0;
     font-size: clamp(48px, 5.2vw, 78px);
     line-height: 0.98;
-    letter-spacing: -0.055em;
+    letter-spacing: -0.035em;
+    color: var(--champagne);
+    text-shadow: 0 18px 48px rgba(0, 0, 0, 0.62);
     text-wrap: balance;
   }
 
   .hero-text {
     max-width: 640px;
     margin: 28px 0 0;
-    color: #c7c7c7;
+    color: #cfc5aa;
     font-size: clamp(17px, 1.4vw, 20px);
     line-height: 1.7;
   }
@@ -154,9 +154,10 @@
     display: grid;
     grid-template-columns: 1fr auto;
     gap: 8px;
-    background: #fff;
+    border: 1px solid rgba(212, 175, 55, 0.34);
+    background: rgba(8, 8, 8, 0.9);
     border-radius: 18px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.32);
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(255, 255, 255, 0.03);
   }
 
   .hero-search input {
@@ -167,7 +168,7 @@
     border: 0;
     outline: 0;
     background: transparent;
-    color: #111;
+    color: var(--champagne);
     font: inherit;
     font-size: 16px;
   }
@@ -176,7 +177,7 @@
   .primary-action {
     border: 0;
     border-radius: 13px;
-    background: var(--gold);
+    background: linear-gradient(135deg, var(--gold2), var(--gold) 52%, #9b741b);
     color: #050505;
     font: inherit;
     font-size: 14px;
@@ -213,9 +214,9 @@
   }
 
   .secondary-action {
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.05);
-    color: #fff;
+    border: 1px solid rgba(212, 175, 55, 0.28);
+    background: rgba(212, 175, 55, 0.06);
+    color: var(--champagne);
   }
 
   .hero-proof {
@@ -224,7 +225,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 18px 30px;
-    color: #9c9c9c;
+    color: #9f947e;
     font-size: 13px;
     list-style: none;
   }
@@ -246,7 +247,7 @@
   }
 
   .hero-proof strong {
-    color: #fff;
+    color: var(--champagne);
   }
 
   .hero-showcase {
@@ -254,25 +255,23 @@
     min-height: 520px;
     padding: 34px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.11);
+    border: 1px solid rgba(212, 175, 55, 0.24);
     border-radius: 38px;
     background:
-      linear-gradient(145deg, rgba(255, 255, 255, 0.08), transparent 48%),
-      #151515;
-    box-shadow: 0 30px 100px rgba(0, 0, 0, 0.4);
+      linear-gradient(145deg, rgba(212, 175, 55, 0.16), transparent 44%),
+      linear-gradient(180deg, #17140d, #070707 72%);
+    box-shadow: 0 34px 110px rgba(0, 0, 0, 0.55), 0 0 40px rgba(212, 175, 55, 0.08);
   }
 
   .hero-showcase::after {
     content: "";
     position: absolute;
-    width: 330px;
-    height: 330px;
-    right: -90px;
-    bottom: -130px;
-    border-radius: 50%;
-    background: var(--gold);
-    filter: blur(10px);
-    opacity: 0.16;
+    right: 34px;
+    bottom: 28px;
+    left: 34px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.62), transparent);
+    opacity: 0.9;
   }
 
   .showcase-copy {
@@ -284,7 +283,7 @@
   }
 
   .showcase-copy span {
-    color: var(--gold);
+    color: var(--gold2);
     font-size: 11px;
     font-weight: 900;
     letter-spacing: 0.18em;
@@ -309,8 +308,8 @@
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 24px;
-    background: #fff;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    background: linear-gradient(160deg, #f1e6c9 0%, #b9993d 42%, #0d0c09 100%);
+    box-shadow: 0 24px 58px rgba(0, 0, 0, 0.52), 0 0 0 1px rgba(212, 175, 55, 0.22);
   }
 
   .product-card img {
@@ -353,8 +352,9 @@
     left: 14px;
     padding: 7px 11px;
     border-radius: 999px;
-    background: #0a0a0a;
-    color: var(--gold);
+    border: 1px solid rgba(212, 175, 55, 0.32);
+    background: rgba(5, 5, 5, 0.92);
+    color: var(--gold2);
     font-size: 10px;
     font-weight: 900;
     letter-spacing: 0.08em;
@@ -367,30 +367,16 @@
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    color: #fff;
+    color: var(--champagne);
     font-size: 14px;
     font-weight: 900;
   }
 
   .showcase-link span {
-    color: var(--gold);
+    color: var(--gold2);
     font-size: 20px;
   }
 
-  .hero-glow {
-    position: absolute;
-    border-radius: 50%;
-    filter: blur(80px);
-    pointer-events: none;
-  }
-
-  .hero-glow-one {
-    width: 300px;
-    height: 300px;
-    top: -130px;
-    left: 18%;
-    background: rgba(255, 196, 0, 0.1);
-  }
 
   .sr-only {
     position: absolute;

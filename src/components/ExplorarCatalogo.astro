@@ -462,4 +462,73 @@ const contenido = vista === "marcas"
     .favorite-card { transition: none; }
     .loading-card { animation: none; }
   }
+
+  /* Nuite luxury polish */
+  .explore-page,
+  .explore-hero {
+    background:
+      linear-gradient(180deg, #030303 0%, #090805 52%, #020202 100%);
+    color: var(--champagne);
+  }
+
+  .explore-hero {
+    border-color: rgba(212, 175, 55, 0.18);
+  }
+
+  .explore-hero p,
+  .favorite-copy small,
+  .brand-copy small,
+  .brand-copy b {
+    color: var(--gold2);
+  }
+
+  .explore-hero h1,
+  .favorite-copy strong,
+  .brand-copy strong {
+    color: var(--champagne);
+  }
+
+  .explore-hero span,
+  .favorite-copy em,
+  .brand-copy span {
+    color: #bfb49b;
+  }
+
+  .favorite-card,
+  .brand-card,
+  .brand-card-2,
+  .brand-card-3,
+  .explore-error {
+    border-color: rgba(212, 175, 55, 0.22);
+    background:
+      linear-gradient(150deg, rgba(212, 175, 55, 0.16), transparent 38%),
+      linear-gradient(180deg, #16130c 0%, #070707 70%);
+    box-shadow: 0 24px 76px rgba(0, 0, 0, 0.48);
+  }
+
+  .favorite-card:hover,
+  .brand-card:hover {
+    border-color: rgba(241, 216, 137, 0.58);
+    box-shadow: 0 30px 88px rgba(0, 0, 0, 0.54), 0 0 34px rgba(212, 175, 55, 0.12);
+  }
+
+  .favorite-image,
+  .brand-product {
+    background: linear-gradient(145deg, #efe3c4, #b89539 48%, #11100c);
+  }
+
+  .favorite-image span,
+  .brand-copy {
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    background: rgba(5, 5, 5, 0.92);
+  }
+
+  .favorite-copy b {
+    color: var(--gold2);
+  }
+
+  .loading-card {
+    background: linear-gradient(100deg, #11100c 20%, #2b2412 40%, #11100c 60%);
+    background-size: 200% 100%;
+  }
 </style>

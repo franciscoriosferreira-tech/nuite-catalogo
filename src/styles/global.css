@@ -5,8 +5,8 @@
 html,
 body {
   margin: 0;
-  background: #000;
-  color: #fff;
+  background: #030303;
+  color: #f7f0dd;
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -21,18 +21,23 @@ img {
 }
 
 :root {
-  --gold: #ffc400;
-  --gold2: #ffd84d;
+  --gold: #d4af37;
+  --gold2: #f1d889;
+  --gold3: #8f6b18;
+  --champagne: #f7f0dd;
   --black: #000;
-  --card: #171717;
-  --card2: #1d1d1d;
-  --muted: #b7b7b7;
-  --border: rgba(255,255,255,.14);
+  --onyx: #050505;
+  --card: #11100d;
+  --card2: #18150d;
+  --muted: #b9b09b;
+  --border: rgba(212,175,55,.18);
+  --gold-border: rgba(212,175,55,.42);
+  --gold-shadow: rgba(212,175,55,.18);
 }
 
 .page {
   min-height: 100vh;
-  background: #000;
+  background: #030303;
 }
 
 .container {
@@ -58,8 +63,8 @@ img {
   font-size: clamp(38px, 5vw, 64px);
   line-height: .95;
   font-weight: 1000;
-  letter-spacing: -2px;
-  text-shadow: 3px 3px 0 rgba(0, 120, 255, .45);
+  letter-spacing: -1px;
+  color: var(--champagne);
 }
 
 .text {

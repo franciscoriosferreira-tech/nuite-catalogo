@@ -539,7 +539,7 @@
   }
 
   .discovery {
-    background: #f5f3ed;
+    background: #030303;
     color: #111;
   }
 
@@ -735,14 +735,14 @@
 
   .brand-feature-2 {
     background:
-      radial-gradient(circle at 50% 32%, rgba(143, 86, 255, 0.24), transparent 35%),
-      linear-gradient(150deg, #211a2d, #0e0e0e 60%);
+      linear-gradient(150deg, rgba(212, 175, 55, 0.18), transparent 36%),
+      linear-gradient(150deg, #17130a, #0e0e0e 60%);
   }
 
   .brand-feature-3 {
     background:
-      radial-gradient(circle at 50% 32%, rgba(214, 76, 76, 0.22), transparent 35%),
-      linear-gradient(150deg, #2c1b1b, #0e0e0e 60%);
+      linear-gradient(150deg, rgba(241, 216, 137, 0.16), transparent 36%),
+      linear-gradient(150deg, #161207, #0e0e0e 60%);
   }
 
   .brand-products {
@@ -1323,5 +1323,146 @@
     .trend-skeleton {
       animation: none;
     }
+  }
+
+  /* Nuite luxury polish */
+  .discovery,
+  .featured-brands,
+  .catalogo {
+    background:
+      linear-gradient(180deg, #030303 0%, #090805 48%, #020202 100%);
+    color: var(--champagne);
+  }
+
+  .discovery {
+    border-top: 1px solid rgba(212, 175, 55, 0.16);
+  }
+
+  .featured-brands {
+    border-color: rgba(212, 175, 55, 0.18);
+  }
+
+  .section-kicker,
+  .catalog-kicker {
+    color: var(--gold2);
+  }
+
+  .section-heading h2,
+  .catalog-title {
+    color: var(--champagne);
+    letter-spacing: -0.03em;
+  }
+
+  .section-heading > a,
+  .section-heading > a span,
+  .trend-body small,
+  .trend-body b,
+  .brand-feature-copy span,
+  .brand-feature-copy b {
+    color: var(--gold2);
+  }
+
+  .section-heading-dark > p,
+  .intro {
+    color: #c4b99f;
+  }
+
+  .trend-card,
+  .filtros,
+  .card,
+  .sin-resultados {
+    border-color: rgba(212, 175, 55, 0.2);
+    background:
+      linear-gradient(180deg, rgba(212, 175, 55, 0.08), transparent 42%),
+      #0d0c09;
+    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.42);
+  }
+
+  .trend-card:hover,
+  .card:hover {
+    border-color: rgba(241, 216, 137, 0.58);
+    box-shadow: 0 28px 82px rgba(0, 0, 0, 0.52), 0 0 34px rgba(212, 175, 55, 0.12);
+  }
+
+  .trend-image,
+  .imgbox,
+  .favorite-image {
+    background:
+      linear-gradient(145deg, #efe2c2 0%, #b9963a 42%, #100f0b 100%);
+  }
+
+  .trend-image img,
+  .imgbox img {
+    background: transparent;
+  }
+
+  .brand-feature,
+  .brand-feature-2,
+  .brand-feature-3 {
+    border-color: rgba(212, 175, 55, 0.24);
+    background:
+      linear-gradient(150deg, rgba(212, 175, 55, 0.22), transparent 38%),
+      linear-gradient(180deg, #191409 0%, #080808 68%);
+    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.48);
+  }
+
+  .brand-product {
+    background: linear-gradient(145deg, #efe4c7, #b89539 48%, #11100c);
+    box-shadow: 0 22px 52px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(212, 175, 55, 0.18);
+  }
+
+  .brand-feature-copy,
+  .info div,
+  .fragancia,
+  .size {
+    border: 1px solid rgba(212, 175, 55, 0.17);
+    background: rgba(6, 6, 5, 0.92);
+  }
+
+  .filtros input,
+  .fila-filtros select {
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    background: #050505;
+    color: var(--champagne);
+  }
+
+  .filtros input:focus,
+  .fila-filtros select:focus {
+    border-color: rgba(241, 216, 137, 0.62);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+  }
+
+  .fila-filtros button,
+  .tag,
+  .detalle-boton,
+  .aroma-chip.activo,
+  .paginacion button.activo {
+    background: linear-gradient(135deg, var(--gold2), var(--gold) 54%, #9c741b);
+    color: #050505;
+  }
+
+  .aroma-chip,
+  .paginacion button,
+  .gender {
+    border-color: rgba(212, 175, 55, 0.2);
+    background: #080806;
+    color: #d8cfb8;
+  }
+
+  .perfume-card .brand,
+  .size strong,
+  .fragancia strong,
+  .stock {
+    color: var(--gold2);
+  }
+
+  .desc,
+  .contador {
+    color: #bdb29a;
+  }
+
+  .trend-skeleton {
+    background: linear-gradient(100deg, #11100c 20%, #2b2412 40%, #11100c 60%);
+    background-size: 200% 100%;
   }
 </style>

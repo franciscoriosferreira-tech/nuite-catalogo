@@ -13,9 +13,9 @@
       <a class="access-card access-card-main" href="/perfumes">
         <span class="access-number">01</span>
         <div>
-          <small>Inventario completo</small>
+          <small>Catálogo completo</small>
           <strong>Todos los perfumes</strong>
-          <p>Busca, filtra por aroma, género o marca y revisa cada detalle.</p>
+          <p>Explora cada fragancia con filtros claros, notas olfativas y stock disponible.</p>
           <b>Ir al catálogo →</b>
         </div>
       </a>
@@ -23,9 +23,9 @@
       <a class="access-card" href="/favoritos">
         <span class="access-number">02</span>
         <div>
-          <small>Selección Nuite</small>
+          <small>Selección destacada</small>
           <strong>Favoritos</strong>
-          <p>Una selección rápida de fragancias disponibles para descubrir.</p>
+          <p>Una vitrina cuidada con aromas recomendados para elegir rápido y con estilo.</p>
           <b>Ver favoritos →</b>
         </div>
       </a>
@@ -33,9 +33,9 @@
       <a class="access-card" href="/marcas">
         <span class="access-number">03</span>
         <div>
-          <small>Casas destacadas</small>
+          <small>Casas árabes</small>
           <strong>Marcas</strong>
-          <p>Encuentra las marcas con mayor variedad en nuestro inventario.</p>
+          <p>Revisa nuestras casas disponibles y entra directo a las fragancias de cada una.</p>
           <b>Explorar marcas →</b>
         </div>
       </a>
@@ -93,8 +93,10 @@
   }
 
   .access-card {
+    position: relative;
     min-height: 330px;
     padding: 28px;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -107,6 +109,36 @@
     transition: transform 0.2s ease, border-color 0.2s ease;
   }
 
+  .access-card::before,
+  .access-card::after {
+    content: "";
+    position: absolute;
+    pointer-events: none;
+  }
+
+  .access-card::before {
+    top: 24px;
+    right: 24px;
+    width: 92px;
+    height: 92px;
+    border-top: 1px solid rgba(241, 216, 137, 0.32);
+    border-right: 1px solid rgba(241, 216, 137, 0.24);
+    opacity: 0.68;
+  }
+
+  .access-card::after {
+    right: 28px;
+    bottom: 28px;
+    width: 118px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(241, 216, 137, 0.45));
+    opacity: 0.74;
+  }
+
+  .access-card > * {
+    position: relative;
+    z-index: 1;
+  }
   .access-card:hover {
     transform: translateY(-5px);
     border-color: rgba(255, 196, 0, 0.62);
@@ -186,5 +218,42 @@
     .access-card {
       transition: none;
     }
+  }
+
+  /* Nuite luxury polish */
+  .access-section {
+    background:
+      linear-gradient(180deg, #020202 0%, #090805 52%, #030303 100%);
+    border-color: rgba(212, 175, 55, 0.18);
+  }
+
+  .access-heading > p,
+  .access-number,
+  .access-card b {
+    color: var(--gold2);
+  }
+
+  .access-heading h2,
+  .access-card strong {
+    color: var(--champagne);
+  }
+
+  .access-heading > span,
+  .access-card p {
+    color: #bfb49b;
+  }
+
+  .access-card,
+  .access-card-main {
+    border-color: rgba(212, 175, 55, 0.22);
+    background:
+      linear-gradient(145deg, rgba(212, 175, 55, 0.16), transparent 42%),
+      linear-gradient(180deg, #16130c 0%, #070707 72%);
+    box-shadow: 0 24px 78px rgba(0, 0, 0, 0.5);
+  }
+
+  .access-card:hover {
+    border-color: rgba(241, 216, 137, 0.6);
+    box-shadow: 0 30px 90px rgba(0, 0, 0, 0.56), 0 0 34px rgba(212, 175, 55, 0.12);
   }
 </style>
