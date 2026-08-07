@@ -96,8 +96,13 @@
   import {
     PERFUME_PUBLIC_FIELDS,
     aplicarCorreccionPerfume,
-    normalizarNotasPerfume,
   } from "../data/perfumeCorrections";
+  import {
+    coincideBusquedaPerfume,
+    coincideFamiliaAroma,
+    coincideValorExacto,
+    normalizarTextoFiltro,
+  } from "../data/perfumeFilters";
 
   const SUPABASE_URL = "https://anawpjjrtxzutillpnoz.supabase.co";
   const SUPABASE_KEY = "sb_publishable_s9BoS3q6FoCAHZ9BdPgH3g_uuR7UtNZ";
@@ -118,112 +123,6 @@
   let filtroAroma = "";
   const porPagina = 12;
 
-  const familiasAroma = {
-    dulce: [
-      "dulce",
-      "gourmand",
-      "vainilla",
-      "avainillado",
-      "azucar",
-      "caramelo",
-      "praline",
-      "malvavisco",
-      "chocolate",
-      "crema",
-      "tonka",
-    ],
-    amaderada: [
-      "amaderado",
-      "amaderada",
-      "madera",
-      "cedro",
-      "sandalo",
-      "vetiver",
-      "pachuli",
-      "patchouli",
-      "oud",
-      "cuero",
-      "cashmere",
-    ],
-    citrica: [
-      "citrico",
-      "citrica",
-      "limon",
-      "bergamota",
-      "mandarina",
-      "naranja",
-      "pomelo",
-      "toronja",
-    ],
-    fresca: [
-      "fresco",
-      "fresh",
-      "menta",
-      "acuatico",
-      "acuaticos",
-      "limpio",
-      "verde",
-      "lavanda marina",
-    ],
-    floral: [
-      "floral",
-      "flor",
-      "jazmin",
-      "rosa",
-      "gardenia",
-      "nardo",
-      "orquidea",
-      "ylang",
-      "geranio",
-      "frangipani",
-      "violeta",
-      "peonia",
-    ],
-    frutal: [
-      "frutal",
-      "afrutado",
-      "afrutados",
-      "fruta",
-      "frutas",
-      "manzana",
-      "pera",
-      "mango",
-      "frutilla",
-      "fresa",
-      "cereza",
-      "durazno",
-      "pina",
-      "coco",
-      "tropical",
-      "bayas",
-      "grosella",
-      "frambuesa",
-    ],
-    especiada: [
-      "especiado",
-      "especiada",
-      "calido",
-      "pimienta",
-      "cardamomo",
-      "canela",
-      "jengibre",
-      "azafran",
-      "nuez moscada",
-      "romero",
-    ],
-    oriental: [
-      "oriental",
-      "ambar",
-      "incienso",
-      "resina",
-      "benzoin",
-      "benjui",
-      "oud",
-      "almizcle",
-      "ladano",
-    ],
-  };
-
   const formatPrice = (price) =>
     new Intl.NumberFormat("es-CL", {
       style: "currency",
@@ -239,32 +138,6 @@
     if (p.id) return `/perfume?id=${encodeURIComponent(p.id)}`;
     if (p.slug) return `/perfume?slug=${encodeURIComponent(p.slug)}`;
     return "#";
-  }
-
-  function normalizarTexto(valor) {
-    return String(valor || "")
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
-  }
-
-  function textoAromatico(perfume) {
-    const notas = normalizarNotasPerfume(perfume.notas);
-
-    return normalizarTexto([
-      perfume.tipo_fragancia,
-      notas.salida,
-      notas.corazon,
-      notas.fondo,
-      perfume.descripcion,
-    ].join(" "));
-  }
-
-  function coincideFamiliaAroma(perfume, familia) {
-    const palabras = familiasAroma[familia] || [];
-    const texto = textoAromatico(perfume);
-
-    return palabras.some((palabra) => texto.includes(palabra));
   }
 
   function crearCard(p) {
@@ -336,7 +209,8 @@
   }
 
   function cargarMarcas() {
-    const marcas = [...new Set(perfumes.map((p) => p.marca).filter(Boolean))];
+    const marcas = [...new Set(perfumes.map((p) => String(p.marca || "").trim()).filter(Boolean))]
+      .sort((a, b) => a.localeCompare(b, "es"));
 
     filtroMarca.innerHTML = `<option value="">Todas las marcas</option>`;
 
@@ -352,31 +226,28 @@
     const generoParam = params.get("genero");
     const buscarParam = params.get("buscar");
 
-    if (marcaParam && marcas.includes(marcaParam)) filtroMarca.value = marcaParam;
-    if (generoParam) filtroGenero.value = generoParam;
+    const marcaCoincidente = marcas.find(
+      (marca) => normalizarTextoFiltro(marca) === normalizarTextoFiltro(marcaParam)
+    );
+    const generoCoincidente = ["Hombre", "Mujer", "Unisex"].find(
+      (genero) => normalizarTextoFiltro(genero) === normalizarTextoFiltro(generoParam)
+    );
+
+    if (marcaCoincidente) filtroMarca.value = marcaCoincidente;
+    if (generoCoincidente) filtroGenero.value = generoCoincidente;
     if (buscarParam) buscador.value = buscarParam;
   }
 
   function obtenerFiltradas() {
-    const texto = buscador.value.toLowerCase().trim();
+    const texto = buscador.value;
     const marca = filtroMarca.value;
     const genero = filtroGenero.value;
 
     let filtradas = perfumes.filter((p) => {
-      const nombre = (p.nombre || "").toLowerCase();
-      const marcaCard = p.marca || "";
-      const generoCard = p.genero || "";
-      const fragancia = (p.tipo_fragancia || "").toLowerCase();
-
-      const coincideTexto =
-        nombre.includes(texto) ||
-        marcaCard.toLowerCase().includes(texto) ||
-        fragancia.includes(texto);
-
-      const coincideMarca = !marca || marcaCard === marca;
-      const coincideGenero = !genero || generoCard === genero;
-      const coincideAroma =
-        !filtroAroma || coincideFamiliaAroma(p, filtroAroma);
+      const coincideTexto = coincideBusquedaPerfume(p, texto);
+      const coincideMarca = coincideValorExacto(p.marca, marca);
+      const coincideGenero = coincideValorExacto(p.genero, genero);
+      const coincideAroma = coincideFamiliaAroma(p, filtroAroma);
 
       return coincideTexto && coincideMarca && coincideGenero && coincideAroma;
     });
