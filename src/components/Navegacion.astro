@@ -7,6 +7,8 @@ const marcas = [
   "Paris Corner",
   "Rave",
 ];
+
+const rutaActual = Astro.url.pathname;
 ---
 
 <header class="site-header">
@@ -55,21 +57,23 @@ const marcas = [
 
   <div class="nav-row">
     <nav class="menu" aria-label="Navegación principal">
-      <a href="/" aria-current="page">Inicio</a>
-      <a href="/#catalogo">Perfumes</a>
+      <a href="/" aria-current={rutaActual === "/" ? "page" : undefined}>Inicio</a>
+      <a href="/perfumes" aria-current={rutaActual === "/perfumes" ? "page" : undefined}>Perfumes</a>
 
       <div class="dropdown">
-        <button type="button" aria-haspopup="true">Marcas <span>⌄</span></button>
+        <button class:list={{ activo: rutaActual === "/marcas" }} type="button" aria-haspopup="true">Marcas <span>⌄</span></button>
         <div class="dropdown-menu">
+          <a href="/marcas">Ver todas las marcas</a>
           {marcas.map((marca) => (
-            <a href={`/?marca=${encodeURIComponent(marca)}#catalogo`}>{marca}</a>
+            <a href={`/perfumes?marca=${encodeURIComponent(marca)}#catalogo`}>{marca}</a>
           ))}
         </div>
       </div>
 
-      <a href="/?genero=Hombre#catalogo">Hombre</a>
-      <a href="/?genero=Mujer#catalogo">Mujer</a>
-      <a href="/?genero=Unisex#catalogo">Unisex</a>
+      <a href="/favoritos" aria-current={rutaActual === "/favoritos" ? "page" : undefined}>Favoritos</a>
+      <a href="/perfumes?genero=Hombre#catalogo">Hombre</a>
+      <a href="/perfumes?genero=Mujer#catalogo">Mujer</a>
+      <a href="/perfumes?genero=Unisex#catalogo">Unisex</a>
       <a href="/ofertas">Ofertas</a>
       <a href="/contacto">Contacto</a>
     </nav>
@@ -90,8 +94,8 @@ const marcas = [
       const input = form.querySelector("input");
       const value = input?.value?.trim() || "";
 
-      if (window.location.pathname !== "/") {
-        window.location.href = `/?buscar=${encodeURIComponent(value)}#catalogo`;
+      if (window.location.pathname !== "/perfumes") {
+        window.location.href = `/perfumes?buscar=${encodeURIComponent(value)}#catalogo`;
         return;
       }
 
@@ -106,9 +110,9 @@ const marcas = [
     position: sticky;
     top: 0;
     z-index: 80;
-    color: #111;
-    background: #fff;
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.08);
+    color: #fff;
+    background: #070707;
+    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.3);
   }
 
   .header-main {
@@ -126,7 +130,7 @@ const marcas = [
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    color: #080808;
+    color: #fff;
   }
 
   .logo-circle {
@@ -171,16 +175,16 @@ const marcas = [
     align-items: center;
     gap: 10px;
     padding: 5px 6px 5px 18px;
-    border: 1px solid #e4e4e4;
+    border: 1px solid rgba(255, 255, 255, 0.13);
     border-radius: 999px;
-    background: #f3f3f3;
+    background: #171717;
   }
 
   .search-mark {
     position: relative;
     width: 14px;
     height: 14px;
-    border: 2px solid #222;
+    border: 2px solid var(--gold);
     border-radius: 50%;
   }
 
@@ -191,7 +195,7 @@ const marcas = [
     bottom: -3px;
     width: 7px;
     height: 2px;
-    background: #222;
+    background: var(--gold);
     transform: rotate(45deg);
     transform-origin: left center;
   }
@@ -204,7 +208,7 @@ const marcas = [
     border: 0;
     outline: 0;
     background: transparent;
-    color: #111;
+    color: #fff;
     font: inherit;
     font-size: 14px;
   }
@@ -214,8 +218,8 @@ const marcas = [
     padding: 0 20px;
     border: 0;
     border-radius: 999px;
-    background: #111;
-    color: #fff;
+    background: var(--gold);
+    color: #080808;
     font-size: 12px;
     font-weight: 900;
     cursor: pointer;
@@ -240,8 +244,8 @@ const marcas = [
   }
 
   .quiet-link {
-    border: 1px solid #dedede;
-    color: #111;
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    color: #fff;
   }
 
   .contact-link {
@@ -250,8 +254,9 @@ const marcas = [
   }
 
   .nav-row {
-    border-top: 1px solid #ececec;
-    border-bottom: 1px solid #e5e5e5;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: #0d0d0d;
   }
 
   .menu {
@@ -262,7 +267,7 @@ const marcas = [
     display: flex;
     align-items: center;
     gap: 28px;
-    color: #111;
+    color: #fff;
     font-size: 13px;
     font-weight: 850;
   }
@@ -283,6 +288,7 @@ const marcas = [
 
   .menu > a:hover,
   .menu > a[aria-current="page"],
+  .dropdown > button.activo,
   .dropdown > button:hover {
     border-bottom-color: var(--gold);
   }
@@ -333,8 +339,8 @@ const marcas = [
     justify-content: center;
     gap: 64px;
     overflow-x: auto;
-    background: #f6f6f6;
-    color: #313131;
+    background: #171717;
+    color: #d0d0d0;
     font-size: 11px;
     font-weight: 800;
     white-space: nowrap;

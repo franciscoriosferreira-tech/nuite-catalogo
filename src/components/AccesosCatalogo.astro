@@ -1,0 +1,190 @@
+<section class="access-section" aria-labelledby="access-title">
+  <div class="access-wrap">
+    <div class="access-heading">
+      <p>Explora Nuite</p>
+      <h2 id="access-title">Cada aroma tiene su espacio.</h2>
+      <span>
+        Elige cómo quieres descubrir el catálogo. Mantuvimos cada experiencia
+        separada para que navegar sea más claro y rápido.
+      </span>
+    </div>
+
+    <div class="access-grid">
+      <a class="access-card access-card-main" href="/perfumes">
+        <span class="access-number">01</span>
+        <div>
+          <small>Inventario completo</small>
+          <strong>Todos los perfumes</strong>
+          <p>Busca, filtra por aroma, género o marca y revisa cada detalle.</p>
+          <b>Ir al catálogo →</b>
+        </div>
+      </a>
+
+      <a class="access-card" href="/favoritos">
+        <span class="access-number">02</span>
+        <div>
+          <small>Selección Nuite</small>
+          <strong>Favoritos</strong>
+          <p>Una selección rápida de fragancias disponibles para descubrir.</p>
+          <b>Ver favoritos →</b>
+        </div>
+      </a>
+
+      <a class="access-card" href="/marcas">
+        <span class="access-number">03</span>
+        <div>
+          <small>Casas destacadas</small>
+          <strong>Marcas</strong>
+          <p>Encuentra las marcas con mayor variedad en nuestro inventario.</p>
+          <b>Explorar marcas →</b>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .access-section {
+    padding: 92px 24px 104px;
+    background: #050505;
+    color: #fff;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .access-wrap {
+    max-width: 1380px;
+    margin: 0 auto;
+  }
+
+  .access-heading {
+    max-width: 760px;
+    margin-bottom: 42px;
+  }
+
+  .access-heading > p {
+    margin: 0 0 13px;
+    color: var(--gold);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.23em;
+    text-transform: uppercase;
+  }
+
+  .access-heading h2 {
+    margin: 0;
+    font-size: clamp(38px, 5vw, 60px);
+    line-height: 1;
+    letter-spacing: -0.05em;
+  }
+
+  .access-heading > span {
+    max-width: 650px;
+    margin-top: 18px;
+    display: block;
+    color: #a9a9a9;
+    font-size: 16px;
+    line-height: 1.7;
+  }
+
+  .access-grid {
+    display: grid;
+    grid-template-columns: 1.25fr 1fr 1fr;
+    gap: 18px;
+  }
+
+  .access-card {
+    min-height: 330px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 28px;
+    background:
+      radial-gradient(circle at 90% 10%, rgba(255, 196, 0, 0.12), transparent 32%),
+      #151515;
+    color: #fff;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+  }
+
+  .access-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(255, 196, 0, 0.62);
+  }
+
+  .access-card-main {
+    background:
+      radial-gradient(circle at 82% 20%, rgba(255, 216, 77, 0.25), transparent 34%),
+      linear-gradient(145deg, #241c03, #0d0d0d 62%);
+  }
+
+  .access-number {
+    color: var(--gold);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.18em;
+  }
+
+  .access-card small {
+    color: #8f8f8f;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .access-card strong {
+    margin-top: 8px;
+    display: block;
+    font-size: clamp(25px, 2.6vw, 38px);
+    line-height: 1.05;
+  }
+
+  .access-card p {
+    max-width: 440px;
+    margin: 14px 0 22px;
+    color: #ababab;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .access-card b {
+    color: var(--gold);
+    font-size: 12px;
+  }
+
+  @media (max-width: 900px) {
+    .access-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .access-card-main {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 620px) {
+    .access-section {
+      padding: 62px 16px 72px;
+    }
+
+    .access-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .access-card-main {
+      grid-column: auto;
+    }
+
+    .access-card {
+      min-height: 280px;
+      padding: 24px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .access-card {
+      transition: none;
+    }
+  }
+</style>

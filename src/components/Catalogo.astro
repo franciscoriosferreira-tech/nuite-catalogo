@@ -1,38 +1,6 @@
 ---
 ---
 
-<section class="discovery" aria-labelledby="favoritos-title">
-  <div class="discovery-wrap">
-    <div class="section-heading">
-      <div>
-        <p class="section-kicker">Selección Nuite</p>
-        <h2 id="favoritos-title">Favoritos del momento</h2>
-      </div>
-      <a href="#catalogo">Ver todo el catálogo <span>→</span></a>
-    </div>
-
-    <div class="trend-grid" id="trendGrid" aria-live="polite">
-      {Array.from({ length: 6 }).map(() => (
-        <div class="trend-skeleton" aria-hidden="true"></div>
-      ))}
-    </div>
-  </div>
-</section>
-
-<section class="featured-brands" aria-labelledby="brands-title">
-  <div class="discovery-wrap">
-    <div class="section-heading section-heading-dark">
-      <div>
-        <p class="section-kicker">Encuentra tu estilo</p>
-        <h2 id="brands-title">Marcas destacadas</h2>
-      </div>
-      <p>Explora las casas con mayor variedad disponible en Nuite.</p>
-    </div>
-
-    <div class="brand-showcase" id="brandShowcase" aria-live="polite"></div>
-  </div>
-</section>
-
 <section class="catalogo" id="catalogo">
   <div class="wrap">
     <p class="catalog-kicker">Inventario disponible</p>
@@ -144,8 +112,6 @@
   const sinResultados = document.querySelector("#sinResultados");
   const paginacion = document.querySelector("#paginacion");
   const grid = document.querySelector("#gridPerfumes");
-  const trendGrid = document.querySelector("#trendGrid");
-  const brandShowcase = document.querySelector("#brandShowcase");
 
   let perfumes = [];
   let paginaActual = 1;
@@ -369,88 +335,6 @@
     return article;
   }
 
-  function crearTrendCard(p) {
-    const enlace = document.createElement("a");
-    enlace.className = "trend-card";
-    enlace.href = detallePerfumeUrl(p);
-    enlace.innerHTML = `
-      <div class="trend-image">
-        <img
-          src="${imagenPerfume(p)}"
-          alt="${p.nombre || "Perfume"}"
-          width="420"
-          height="520"
-          loading="lazy"
-          decoding="async"
-        />
-        <span>${p.genero || "Unisex"}</span>
-      </div>
-      <div class="trend-body">
-        <small>${p.marca || "Nuite Perfumes"}</small>
-        <strong>${p.nombre || "Perfume"}</strong>
-        <b>${formatPrice(p.precio || 0)}</b>
-      </div>
-    `;
-    return enlace;
-  }
-
-  function renderizarFavoritos() {
-    if (!trendGrid) return;
-
-    const favoritos = [...perfumes]
-      .sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0))
-      .slice(0, 8);
-
-    trendGrid.innerHTML = "";
-    favoritos.forEach((perfume) => trendGrid.appendChild(crearTrendCard(perfume)));
-  }
-
-  function renderizarMarcasDestacadas() {
-    if (!brandShowcase) return;
-
-    const grupos = perfumes.reduce((acumulado, perfume) => {
-      if (!perfume.marca) return acumulado;
-      acumulado[perfume.marca] ||= [];
-      acumulado[perfume.marca].push(perfume);
-      return acumulado;
-    }, {});
-
-    const destacadas = Object.entries(grupos)
-      .sort(([, productosA], [, productosB]) => productosB.length - productosA.length)
-      .slice(0, 3);
-
-    brandShowcase.innerHTML = "";
-
-    destacadas.forEach(([marca, productos], indice) => {
-      const enlace = document.createElement("a");
-      const muestras = productos.slice(0, 3);
-      enlace.className = `brand-feature brand-feature-${indice + 1}`;
-      enlace.href = `/?marca=${encodeURIComponent(marca)}#catalogo`;
-      enlace.innerHTML = `
-        <div class="brand-products">
-          ${muestras.map((producto, posicion) => `
-            <img
-              class="brand-product brand-product-${posicion + 1}"
-              src="${imagenPerfume(producto)}"
-              alt=""
-              width="420"
-              height="520"
-              loading="lazy"
-              decoding="async"
-            />
-          `).join("")}
-        </div>
-        <div class="brand-feature-copy">
-          <span>Descubre</span>
-          <strong>${marca}</strong>
-          <small>${productos.length} perfumes disponibles</small>
-          <b>Ver la marca →</b>
-        </div>
-      `;
-      brandShowcase.appendChild(enlace);
-    });
-  }
-
   function cargarMarcas() {
     const marcas = [...new Set(perfumes.map((p) => p.marca).filter(Boolean))];
 
@@ -595,14 +479,10 @@
       const data = await respuesta.json();
       perfumes = (data || []).map(aplicarCorreccionPerfume);
       cargarMarcas();
-      renderizarFavoritos();
-      renderizarMarcasDestacadas();
       renderizar();
     } catch (error) {
       console.error(error);
       contador.textContent = "No se pudo cargar el catálogo.";
-      trendGrid.innerHTML = '<p class="section-status">No pudimos cargar los favoritos.</p>';
-      brandShowcase.innerHTML = '<p class="section-status">No pudimos cargar las marcas destacadas.</p>';
     }
   }
 

@@ -23,7 +23,7 @@
       </form>
 
       <div class="hero-actions">
-        <a class="primary-action" href="#catalogo">Explorar catálogo</a>
+        <a class="primary-action" href="/perfumes">Explorar catálogo</a>
         <a
           class="secondary-action"
           href="https://wa.me/56935226409?text=Hola%20Nuite%2C%20necesito%20ayuda%20para%20elegir%20un%20perfume"
@@ -78,7 +78,7 @@
         </div>
       </div>
 
-      <a href="/?marca=Lattafa#catalogo" class="showcase-link">Descubrir Lattafa <span>→</span></a>
+      <a href="/perfumes?marca=Lattafa#catalogo" class="showcase-link">Descubrir Lattafa <span>→</span></a>
     </div>
   </div>
 </main>
@@ -89,9 +89,7 @@
       event.preventDefault();
       const input = form.querySelector("input");
       const value = input?.value?.trim() || "";
-
-      window.dispatchEvent(new CustomEvent("nuite:buscar", { detail: value }));
-      document.querySelector("#catalogo")?.scrollIntoView({ behavior: "smooth" });
+      window.location.href = `/perfumes?buscar=${encodeURIComponent(value)}#catalogo`;
     });
   });
 </script>
