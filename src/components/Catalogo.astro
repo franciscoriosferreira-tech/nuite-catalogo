@@ -17,30 +17,47 @@
     </p>
 
     <div class="filtros">
-      <input id="buscador" type="text" placeholder="Buscar perfume..." />
+      <div class="filtro-principal">
+        <label class="sr-only" for="buscador">Buscar perfume</label>
+        <input id="buscador" type="search" placeholder="Buscar perfume..." autocomplete="off" />
 
-      <div class="fila-filtros">
-        <select id="filtroMarca">
-          <option value="">Todas las marcas</option>
-        </select>
-
-        <select id="filtroGenero">
-          <option value="">Todos los géneros</option>
-          <option value="Hombre">Hombre</option>
-          <option value="Mujer">Mujer</option>
-          <option value="Unisex">Unisex</option>
-        </select>
-
-        <select id="ordenar">
-          <option value="">Ordenar perfumes</option>
-          <option value="menor">Precio más bajo</option>
-          <option value="mayor">Precio más alto</option>
-          <option value="nombre">Orden alfabético</option>
-        </select>
-
-        <button id="limpiar" type="button">
-          Limpiar filtros
+        <button
+          id="alternarFiltros"
+          class="filtros-toggle"
+          type="button"
+          aria-controls="filtrosAvanzados"
+          aria-expanded="false"
+        >
+          <span>Filtros</span>
+          <span id="filtrosActivos" class="filtros-activos" hidden>0</span>
+          <span class="filtros-toggle-mark" aria-hidden="true"></span>
         </button>
+      </div>
+
+      <div id="filtrosAvanzados" class="filtros-avanzados">
+        <div class="fila-filtros">
+          <select id="filtroMarca" aria-label="Filtrar por marca">
+            <option value="">Todas las marcas</option>
+          </select>
+
+          <select id="filtroGenero" aria-label="Filtrar por género">
+            <option value="">Todos los géneros</option>
+            <option value="Hombre">Hombre</option>
+            <option value="Mujer">Mujer</option>
+            <option value="Unisex">Unisex</option>
+          </select>
+
+          <select id="ordenar" aria-label="Ordenar perfumes">
+            <option value="">Ordenar perfumes</option>
+            <option value="menor">Precio más bajo</option>
+            <option value="mayor">Precio más alto</option>
+            <option value="nombre">Orden alfabético</option>
+          </select>
+
+          <button id="limpiar" type="button">
+            Limpiar filtros
+          </button>
+        </div>
       </div>
 
       <div class="aroma-filtros" aria-label="Filtrar por familia aromática">
@@ -112,6 +129,9 @@
   const filtroGenero = document.querySelector("#filtroGenero");
   const ordenar = document.querySelector("#ordenar");
   const limpiar = document.querySelector("#limpiar");
+  const alternarFiltros = document.querySelector("#alternarFiltros");
+  const filtrosAvanzados = document.querySelector("#filtrosAvanzados");
+  const filtrosActivos = document.querySelector("#filtrosActivos");
   const aromaBotones = document.querySelectorAll("[data-aroma]");
   const contador = document.querySelector("#contador");
   const sinResultados = document.querySelector("#sinResultados");
@@ -194,10 +214,6 @@
           </div>
         </div>
 
-        <div class="fragancia">
-          <small>TIPO DE FRAGANCIA</small>
-          <strong>${p.tipo_fragancia || "No especificado"}</strong>
-        </div>
 
         <a class="detalle-boton" href="${detallePerfumeUrl(p)}">
           Ver detalles
@@ -269,9 +285,25 @@
     return filtradas;
   }
 
+  function actualizarEstadoFiltros() {
+    const total = [
+      buscador.value.trim(),
+      filtroMarca.value,
+      filtroGenero.value,
+      ordenar.value,
+      filtroAroma,
+    ].filter(Boolean).length;
+
+    filtrosActivos.textContent = String(total);
+    filtrosActivos.hidden = total === 0;
+    limpiar.disabled = total === 0;
+  }
+
   function renderizar() {
     const filtradas = obtenerFiltradas();
     const totalPaginas = Math.ceil(filtradas.length / porPagina);
+
+    actualizarEstadoFiltros();
 
     if (paginaActual > totalPaginas) {
       paginaActual = 1;
@@ -301,17 +333,20 @@
       const boton = document.createElement("button");
       boton.textContent = i;
       boton.type = "button";
+      boton.setAttribute("aria-label", "Ir a la página " + i);
 
       if (i === paginaActual) {
         boton.classList.add("activo");
+        boton.setAttribute("aria-current", "page");
       }
 
       boton.addEventListener("click", () => {
         paginaActual = i;
         renderizar();
 
-        document.querySelector("#catalogo").scrollIntoView({
+        grid.scrollIntoView({
           behavior: "smooth",
+          block: "start",
         });
       });
 
@@ -357,6 +392,11 @@
     }
   }
 
+  alternarFiltros.addEventListener("click", () => {
+    const abierto = filtrosAvanzados.classList.toggle("abiertos");
+    alternarFiltros.setAttribute("aria-expanded", String(abierto));
+  });
+
   let temporizadorBusqueda;
   buscador.addEventListener("input", () => {
     window.clearTimeout(temporizadorBusqueda);
@@ -390,6 +430,8 @@
     });
 
     paginaActual = 1;
+    filtrosAvanzados.classList.remove("abiertos");
+    alternarFiltros.setAttribute("aria-expanded", "false");
     renderizar();
   });
 
@@ -404,676 +446,413 @@
 </script>
 
 <style is:global>
-  .discovery,
-  .featured-brands {
-    padding: 88px 24px;
-  }
-
-  .discovery {
-    background: #030303;
-    color: #111;
-  }
-
-  .featured-brands {
-    background: #090909;
-    color: #fff;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  }
-
-  .discovery-wrap {
-    max-width: 1380px;
-    margin: 0 auto;
-  }
-
-  .section-heading {
-    margin-bottom: 34px;
-    display: flex;
-    align-items: end;
-    justify-content: space-between;
-    gap: 28px;
-  }
-
-  .section-kicker {
-    margin: 0 0 10px;
-    color: #806200;
-    font-size: 11px;
-    font-weight: 900;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-  }
-
-  .section-heading h2 {
-    margin: 0;
-    font-size: clamp(34px, 4vw, 54px);
-    line-height: 1;
-    letter-spacing: -0.045em;
-  }
-
-  .section-heading > a {
-    color: #111;
-    font-size: 13px;
-    font-weight: 900;
-  }
-
-  .section-heading > a span {
-    margin-left: 7px;
-    color: #806200;
-    font-size: 19px;
-  }
-
-  .section-heading-dark .section-kicker {
-    color: var(--gold);
-  }
-
-  .section-heading-dark > p {
-    max-width: 420px;
-    margin: 0;
-    color: #989898;
-    font-size: 14px;
-    line-height: 1.6;
-  }
-
-  .trend-grid {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(210px, 1fr);
-    gap: 16px;
-    overflow-x: auto;
-    padding: 2px 2px 16px;
-    scroll-snap-type: x proximity;
-    scrollbar-color: #c9c4b7 transparent;
-  }
-
-  .trend-card {
-    min-width: 0;
-    overflow: hidden;
-    border: 1px solid #e1ddd2;
-    border-radius: 20px;
-    background: #fff;
-    color: #111;
-    scroll-snap-align: start;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-
-  .trend-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 18px 44px rgba(40, 33, 10, 0.12);
-  }
-
-  .trend-image {
-    position: relative;
-    height: 260px;
-    overflow: hidden;
-    background: #f8f8f8;
-  }
-
-  .trend-image img {
-    width: 100%;
-    height: 100%;
-    padding: 18px;
-    object-fit: contain;
-    transition: transform 0.35s ease;
-  }
-
-  .trend-card:hover .trend-image img {
-    transform: scale(1.035);
-  }
-
-  .trend-image span {
-    position: absolute;
-    top: 12px;
-    left: 12px;
-    padding: 6px 9px;
-    border-radius: 999px;
-    background: rgba(10, 10, 10, 0.88);
-    color: #fff;
-    font-size: 9px;
-    font-weight: 900;
-    text-transform: uppercase;
-  }
-
-  .trend-body {
-    min-height: 142px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-  }
-
-  .trend-body small {
-    color: #877018;
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .trend-body strong {
-    margin-top: 7px;
-    display: -webkit-box;
-    overflow: hidden;
-    font-size: 15px;
-    line-height: 1.35;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-  }
-
-  .trend-body b {
-    margin-top: auto;
-    padding-top: 14px;
-    font-size: 17px;
-  }
-
-  .trend-skeleton {
-    height: 404px;
-    border-radius: 20px;
-    background: linear-gradient(100deg, #e9e5db 20%, #f4f1ea 40%, #e9e5db 60%);
-    background-size: 200% 100%;
-    animation: trend-loading 1.2s ease-in-out infinite;
-  }
-
-  .section-status {
-    margin: 0;
-    padding: 24px;
-    border: 1px solid currentColor;
-    border-radius: 18px;
-    color: #777;
-    font-size: 14px;
-  }
-
-  @keyframes trend-loading {
-    to { background-position: -200% 0; }
-  }
-
-  .brand-showcase {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
-  }
-
-  .brand-feature {
-    position: relative;
-    min-height: 510px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.11);
-    border-radius: 30px;
-    background:
-      radial-gradient(circle at 50% 32%, rgba(255, 196, 0, 0.2), transparent 34%),
-      linear-gradient(150deg, #222, #0e0e0e 58%);
-    color: #fff;
-    isolation: isolate;
-  }
-
-  .brand-feature-2 {
-    background:
-      linear-gradient(150deg, rgba(212, 175, 55, 0.18), transparent 36%),
-      linear-gradient(150deg, #17130a, #0e0e0e 60%);
-  }
-
-  .brand-feature-3 {
-    background:
-      linear-gradient(150deg, rgba(241, 216, 137, 0.16), transparent 36%),
-      linear-gradient(150deg, #161207, #0e0e0e 60%);
-  }
-
-  .brand-products {
-    position: relative;
-    height: 335px;
-    margin: 24px 20px 0;
-  }
-
-  .brand-product {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 54%;
-    height: 88%;
-    padding: 8px;
-    border-radius: 20px;
-    background: #fff;
-    object-fit: contain;
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.38);
-    transform: translateX(-50%);
-  }
-
-  .brand-product-1 {
-    z-index: 3;
-  }
-
-  .brand-product-2,
-  .brand-product-3 {
-    bottom: 14px;
-    width: 43%;
-    height: 72%;
-    opacity: 0.82;
-  }
-
-  .brand-product-2 {
-    left: 25%;
-    transform: translateX(-50%) rotate(-8deg);
-  }
-
-  .brand-product-3 {
-    left: 75%;
-    transform: translateX(-50%) rotate(8deg);
-  }
-
-  .brand-feature-copy {
-    position: absolute;
-    z-index: 5;
-    right: 20px;
-    bottom: 20px;
-    left: 20px;
-    padding: 18px 20px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 4px 14px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    background: rgba(5, 5, 5, 0.92);
-    backdrop-filter: blur(10px);
-  }
-
-  .brand-feature-copy span {
-    color: var(--gold);
-    font-size: 9px;
-    font-weight: 900;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
-  .brand-feature-copy strong {
-    grid-column: 1;
-    font-size: 24px;
-    line-height: 1.1;
-  }
-
-  .brand-feature-copy small {
-    grid-column: 1;
-    margin-top: 3px;
-    color: #9b9b9b;
-    font-size: 11px;
-  }
-
-  .brand-feature-copy b {
-    grid-column: 2;
-    grid-row: 1 / 4;
-    align-self: center;
-    color: #fff;
-    font-size: 11px;
-  }
-
   .catalogo {
-    background: #000;
     min-height: 100vh;
-    padding: 42px 24px 70px;
-    color: white;
+    padding: 38px 24px 80px;
+    background: linear-gradient(180deg, #030303 0%, #090805 48%, #020202 100%);
+    color: var(--champagne);
   }
 
-  .wrap {
+  .catalogo .wrap {
     max-width: 1380px;
     margin: 0 auto;
   }
 
   .catalog-kicker {
     margin: 0;
-    color: #ffc400;
-    font-weight: 900;
-    letter-spacing: 0.25em;
+    color: var(--gold2);
     font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0;
     text-transform: uppercase;
   }
 
   .catalog-title {
+    margin: 12px 0 8px;
+    color: var(--champagne);
     font-size: clamp(38px, 5vw, 58px);
-    margin: 16px 0 10px;
     font-weight: 1000;
     line-height: 1;
-    letter-spacing: -0.045em;
+    letter-spacing: 0;
   }
 
   .intro {
-    color: #b7b7b7;
-    font-size: 18px;
-    max-width: 760px;
-    line-height: 1.7;
+    max-width: 720px;
+    margin: 0;
+    color: #c4b99f;
+    font-size: 17px;
+    line-height: 1.6;
   }
 
   .contador {
-    color: #cfcfcf;
+    margin: 32px 0 16px;
+    color: #bdb29a;
+    font-size: 15px;
     font-weight: 900;
-    margin-top: 48px;
-    margin-bottom: 24px;
   }
 
   .filtros {
-    background: #171717;
-    border: 1px solid rgba(255,255,255,.12);
-    border-radius: 30px;
-    padding: 24px;
-    margin-bottom: 56px;
+    margin-bottom: 34px;
+    padding: 18px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 20px;
+    background:
+      linear-gradient(180deg, rgba(212, 175, 55, 0.07), transparent 52%),
+      #0d0c09;
+    box-shadow: 0 18px 54px rgba(0, 0, 0, 0.36);
+  }
+
+  .filtro-principal {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .filtros input,
+  .fila-filtros select {
+    width: 100%;
+    height: 50px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 13px;
+    outline: 0;
+    background: #050505;
+    color: var(--champagne);
+    font: inherit;
+    font-size: 15px;
   }
 
   .filtros input {
-    width: 100%;
-    height: 62px;
-    border-radius: 17px;
-    border: none;
-    background: #000;
-    color: white;
-    padding: 0 24px;
-    font-size: 18px;
-    outline: none;
-    margin-bottom: 18px;
+    padding: 0 18px;
+  }
+
+  .filtros input::placeholder {
+    color: #8f856f;
+  }
+
+  .filtros input:focus,
+  .fila-filtros select:focus {
+    border-color: rgba(241, 216, 137, 0.62);
+    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
+  }
+
+  .filtros-toggle {
+    display: none;
+  }
+
+  .filtros-avanzados {
+    margin-top: 12px;
   }
 
   .fila-filtros {
     display: grid;
-    grid-template-columns: 1fr 1fr 1fr 280px;
-    gap: 16px;
-  }
-
-  .fila-filtros select,
-  .fila-filtros button {
-    width: 100%;
-    height: 58px;
-    border-radius: 16px;
-    border: none;
-    padding: 0 22px;
-    font-size: 16px;
-    outline: none;
+    grid-template-columns: 1fr 1fr 1fr minmax(180px, 220px);
+    gap: 10px;
   }
 
   .fila-filtros select {
-    background: #000;
-    color: white;
+    padding: 0 15px;
   }
 
   .fila-filtros button {
-    background: #ffc400;
-    color: #000;
+    min-height: 50px;
+    border: 0;
+    border-radius: 13px;
+    background: linear-gradient(135deg, var(--gold2), var(--gold) 54%, #9c741b);
+    color: #050505;
+    font: inherit;
+    font-size: 14px;
     font-weight: 1000;
     cursor: pointer;
+  }
+
+  .fila-filtros button:disabled {
+    opacity: 0.48;
+    cursor: default;
   }
 
   .aroma-filtros {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 18px;
-    padding-top: 18px;
-    border-top: 1px solid rgba(255,255,255,.08);
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(212, 175, 55, 0.14);
   }
 
   .aroma-chip {
-    min-height: 42px;
-    border: 1px solid rgba(255,255,255,.12);
+    min-height: 38px;
+    padding: 0 15px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
     border-radius: 999px;
-    background: #0b0b0b;
-    color: #d8d8d8;
-    padding: 0 18px;
-    font-size: 14px;
+    background: #080806;
+    color: #d8cfb8;
+    font: inherit;
+    font-size: 13px;
     font-weight: 900;
     cursor: pointer;
-    transition: .25s;
+    transition: transform 180ms ease, border-color 180ms ease, color 180ms ease;
   }
 
   .aroma-chip:hover {
     color: #fff;
-    border-color: rgba(255,196,0,.55);
+    border-color: rgba(241, 216, 137, 0.58);
     transform: translateY(-1px);
   }
 
   .aroma-chip.activo {
-    background: #ffc400;
-    color: #000;
-    border-color: #ffc400;
-    box-shadow: 0 0 18px rgba(255,196,0,.22);
+    border-color: var(--gold);
+    background: linear-gradient(135deg, var(--gold2), var(--gold) 54%, #9c741b);
+    color: #050505;
+    box-shadow: 0 0 18px rgba(212, 175, 55, 0.18);
   }
 
   .grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 34px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 24px;
+    scroll-margin-top: 190px;
   }
 
   .card {
-    background: #171717;
-    border: 1px solid rgba(255,255,255,.08);
-    border-radius: 30px;
     overflow: hidden;
-    transition: .25s;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 24px;
+    background:
+      linear-gradient(180deg, rgba(212, 175, 55, 0.06), transparent 38%),
+      #0d0c09;
+    box-shadow: 0 18px 54px rgba(0, 0, 0, 0.38);
     content-visibility: auto;
-    contain-intrinsic-size: 680px;
+    contain-intrinsic-size: 560px;
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
   }
 
   .card:hover {
-    transform: translateY(-4px);
-    border-color: rgba(255,196,0,.55);
-    box-shadow: 0 0 30px rgba(255,196,0,.10);
+    transform: translateY(-3px);
+    border-color: rgba(241, 216, 137, 0.5);
+    box-shadow: 0 24px 68px rgba(0, 0, 0, 0.48), 0 0 26px rgba(212, 175, 55, 0.1);
   }
 
   .imgbox {
     position: relative;
-    height: 355px;
+    aspect-ratio: 4 / 3;
     overflow: hidden;
-    background: #111;
+    background: linear-gradient(145deg, #efe2c2 0%, #b9963a 42%, #100f0b 100%);
   }
 
   .imgbox img {
     width: 100%;
     height: 100%;
+    padding: 20px;
     object-fit: contain;
-    padding: 28px;
-    background: #0b0b0b;
+    background: transparent;
   }
 
   .tag {
     position: absolute;
-    top: 18px;
-    left: 18px;
-    background: #ffc400;
-    color: #000;
-    padding: 8px 18px;
+    top: 14px;
+    left: 14px;
+    max-width: calc(100% - 28px);
+    overflow: hidden;
+    padding: 7px 14px;
     border-radius: 999px;
-    font-size: 12px;
+    background: linear-gradient(135deg, var(--gold2), var(--gold) 54%, #9c741b);
+    color: #050505;
+    font-size: 11px;
     font-weight: 1000;
+    text-overflow: ellipsis;
     text-transform: uppercase;
+    white-space: nowrap;
   }
 
   .size {
     position: absolute;
-    right: 18px;
-    bottom: 18px;
-    background: rgba(0,0,0,.82);
-    border-radius: 18px;
-    padding: 14px 18px;
+    right: 14px;
+    bottom: 14px;
+    min-width: 82px;
+    padding: 10px 13px;
+    border: 1px solid rgba(212, 175, 55, 0.17);
+    border-radius: 15px;
+    background: rgba(6, 6, 5, 0.92);
     text-align: center;
   }
 
-  .size small {
+  .size small,
+  .perfume-card small {
     display: block;
-    color: #8f8f8f;
-    font-size: 11px;
-    margin-bottom: 3px;
+    color: #817966;
+    font-size: 10px;
+    letter-spacing: 0;
   }
 
   .size strong {
-    color: #ffc400;
-    font-size: 22px;
+    display: block;
+    margin-top: 3px;
+    color: var(--gold2);
+    font-size: 19px;
     line-height: 1;
   }
 
   .body {
-    padding: 28px;
+    padding: 21px;
   }
 
   .head {
     display: flex;
-    justify-content: space-between;
     align-items: flex-start;
-    gap: 14px;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .perfume-card h2 {
-    font-size: 22px;
     margin: 0;
+    color: var(--champagne);
+    font-size: 21px;
     line-height: 1.2;
+    letter-spacing: 0;
   }
 
   .perfume-card .brand {
-    color: #ffc400;
+    margin: 6px 0 0;
+    color: var(--gold2);
+    font-size: 16px;
     font-weight: 900;
-    margin: 8px 0 0;
-    font-size: 18px;
   }
 
   .gender {
-    border: 1px solid rgba(255,255,255,.12);
-    color: white;
-    padding: 7px 14px;
+    flex: 0 0 auto;
+    padding: 6px 11px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
     border-radius: 999px;
-    font-size: 12px;
+    background: #080806;
+    color: #d8cfb8;
+    font-size: 11px;
     white-space: nowrap;
   }
 
   .desc {
-    color: #b7b7b7;
-    line-height: 1.8;
-    min-height: 72px;
-    margin: 24px 0;
-    font-size: 16px;
+    display: -webkit-box;
+    min-height: 2.9em;
+    margin: 15px 0;
+    overflow: hidden;
+    color: #bdb29a;
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .info {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 14px;
+    border-top: 1px solid rgba(212, 175, 55, 0.14);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.14);
   }
 
-  .info div,
-  .fragancia {
-    background: #0b0b0b;
-    border-radius: 18px;
-    padding: 18px;
+  .info > div {
+    min-width: 0;
+    padding: 12px 4px;
   }
 
-  .perfume-card small {
-    display: block;
-    color: #777;
-    font-size: 11px;
-    letter-spacing: .8px;
+  .info > div + div {
+    padding-left: 15px;
+    border-left: 1px solid rgba(212, 175, 55, 0.14);
   }
 
   .info strong {
     display: block;
-    margin-top: 8px;
-    font-size: 18px;
+    margin-top: 5px;
+    color: var(--champagne);
+    font-size: 16px;
+    overflow-wrap: anywhere;
   }
 
   .stock {
-    color: #00e69a;
-  }
-
-  .fragancia {
-    margin-top: 16px;
-    background: #202020;
-    border: 1px solid rgba(255,255,255,.08);
-  }
-
-  .fragancia strong {
-    display: block;
-    margin-top: 8px;
-    font-size: 17px;
+    color: var(--gold2) !important;
   }
 
   .detalle-boton {
     width: 100%;
-    height: 54px;
-    margin-top: 20px;
-    border-radius: 18px;
-    background: #ffc400;
-    color: #000;
-    font-size: 15px;
-    font-weight: 1000;
+    height: 48px;
+    margin-top: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border-radius: 13px;
+    background: linear-gradient(135deg, var(--gold2), var(--gold) 54%, #9c741b);
+    color: #050505;
+    font-size: 14px;
+    font-weight: 1000;
     text-decoration: none;
-    transition: .25s;
+    transition: transform 180ms ease, filter 180ms ease;
   }
 
   .detalle-boton:hover {
-    background: #ffd84d;
-    transform: translateY(-2px);
+    filter: brightness(1.06);
+    transform: translateY(-1px);
   }
 
   .sin-resultados {
     display: none;
-    margin-top: 40px;
-    background: #171717;
-    border-radius: 24px;
-    padding: 26px;
+    margin-top: 28px;
+    padding: 22px;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 18px;
+    background: #0d0c09;
+    color: #cfc6b1;
     text-align: center;
     font-weight: 900;
-    color: #cfcfcf;
   }
 
   .paginacion {
-    margin-top: 54px;
+    margin-top: 36px;
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
-    gap: 14px;
+    gap: 9px;
   }
 
   .paginacion button {
-    width: 52px;
-    height: 52px;
-    border-radius: 16px;
-    border: 1px solid rgba(255,255,255,.10);
-    background: #151515;
-    color: #fff;
-    font-size: 16px;
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(212, 175, 55, 0.2);
+    border-radius: 13px;
+    background: #080806;
+    color: #d8cfb8;
+    font: inherit;
+    font-size: 15px;
     font-weight: 900;
     cursor: pointer;
-    transition: all .25s ease;
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    box-shadow:
-      inset 0 0 0 1px rgba(255,255,255,.03);
+    transition: transform 180ms ease, border-color 180ms ease;
   }
 
   .paginacion button:hover {
-    background: #232323;
-    border-color: rgba(255,196,0,.45);
-    transform: translateY(-2px);
+    border-color: rgba(241, 216, 137, 0.52);
+    transform: translateY(-1px);
   }
 
   .paginacion button.activo {
-    background: #ffc400;
-    color: #000;
-    border-color: #ffc400;
+    border-color: var(--gold);
+    background: linear-gradient(135deg, var(--gold2), var(--gold) 54%, #9c741b);
+    color: #050505;
+    box-shadow: 0 0 16px rgba(212, 175, 55, 0.2);
+  }
 
-    box-shadow:
-      0 0 18px rgba(255,196,0,.35),
-      inset 0 0 0 1px rgba(255,255,255,.12);
+  .catalogo .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
   }
 
   @media (max-width: 1100px) {
-    .brand-showcase {
-      grid-template-columns: repeat(2, 1fr);
-    }
-
-    .brand-feature:last-child {
-      grid-column: 1 / -1;
-      min-height: 470px;
-    }
-
     .grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .fila-filtros {
@@ -1082,62 +861,131 @@
   }
 
   @media (max-width: 720px) {
-    .discovery,
-    .featured-brands {
-      padding: 58px 16px;
+    .catalogo {
+      padding: 22px 12px 112px;
     }
 
-    .section-heading {
-      align-items: flex-start;
-      flex-direction: column;
-      margin-bottom: 26px;
+    .catalog-kicker {
+      font-size: 10px;
     }
 
-    .section-heading > a {
+    .catalog-title {
+      margin: 10px 0 7px;
+      font-size: 34px;
+      line-height: 1.04;
+    }
+
+    .intro {
+      max-width: 35ch;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .contador {
+      margin: 20px 0 12px;
+      font-size: 14px;
+    }
+
+    .filtros {
+      margin-bottom: 22px;
+      padding: 12px;
+      border-radius: 18px;
+    }
+
+    .filtro-principal {
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+    }
+
+    .filtros input {
+      height: 48px;
+      min-width: 0;
+      padding: 0 14px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+
+    .filtros-toggle {
+      min-width: 104px;
+      height: 48px;
+      padding: 0 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      border: 1px solid rgba(212, 175, 55, 0.28);
+      border-radius: 12px;
+      background: #080806;
+      color: var(--champagne);
+      font: inherit;
+      font-size: 13px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
+    .filtros-activos[hidden] {
       display: none;
     }
 
-    .section-heading-dark > p {
-      font-size: 13px;
+    .filtros-activos {
+      min-width: 20px;
+      height: 20px;
+      padding: 0 6px;
+      display: grid;
+      place-items: center;
+      border-radius: 999px;
+      background: var(--gold);
+      color: #050505;
+      font-size: 11px;
     }
 
-    .trend-grid {
-      margin-right: -16px;
-      grid-auto-columns: 75vw;
-      padding-right: 16px;
+    .filtros-toggle-mark {
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid var(--gold2);
+      border-bottom: 2px solid var(--gold2);
+      transform: rotate(45deg) translateY(-2px);
+      transition: transform 180ms ease;
     }
 
-    .trend-image {
-      height: 290px;
+    .filtros-toggle[aria-expanded="true"] .filtros-toggle-mark {
+      transform: rotate(225deg) translate(-1px, -1px);
     }
 
-    .brand-showcase {
-      grid-template-columns: 1fr;
+    .filtros-avanzados {
+      display: none;
+      margin-top: 9px;
     }
 
-    .brand-feature,
-    .brand-feature:last-child {
-      grid-column: auto;
-      min-height: 480px;
-    }
-
-    .catalogo {
-      padding: 28px 16px 42px;
-    }
-
-    .grid {
-      grid-template-columns: 1fr;
-      gap: 24px;
+    .filtros-avanzados.abiertos {
+      display: block;
     }
 
     .fila-filtros {
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .fila-filtros select,
+    .fila-filtros button {
+      min-width: 0;
+      height: 45px;
+      min-height: 45px;
+      padding: 0 10px;
+      border-radius: 11px;
+      font-size: 12px;
+    }
+
+    .fila-filtros button {
+      grid-column: 1 / -1;
     }
 
     .aroma-filtros {
       flex-wrap: nowrap;
+      margin-top: 10px;
+      padding-top: 10px;
+      padding-bottom: 2px;
       overflow-x: auto;
-      padding-bottom: 4px;
       scrollbar-width: none;
     }
 
@@ -1147,193 +995,129 @@
 
     .aroma-chip {
       flex: 0 0 auto;
-      min-height: 40px;
-      padding: 0 15px;
-      font-size: 13px;
+      min-height: 36px;
+      padding: 0 14px;
+      font-size: 12px;
     }
 
-    .filtros {
-      padding: 18px;
-      border-radius: 22px;
+    .grid {
+      grid-template-columns: 1fr;
+      gap: 16px;
+      scroll-margin-top: 12px;
     }
 
-    .filtros input {
-      height: 56px;
-      font-size: 15px;
+    .card {
+      border-radius: 20px;
+      contain-intrinsic-size: 480px;
     }
 
     .imgbox {
-      height: 300px;
+      aspect-ratio: 1.4 / 1;
+    }
+
+    .imgbox img {
+      padding: 14px;
+    }
+
+    .tag {
+      top: 12px;
+      left: 12px;
+      padding: 6px 11px;
+      font-size: 10px;
+    }
+
+    .size {
+      right: 12px;
+      bottom: 12px;
+      min-width: 72px;
+      padding: 8px 10px;
+      border-radius: 13px;
+    }
+
+    .size strong {
+      font-size: 17px;
     }
 
     .body {
-      padding: 22px;
+      padding: 16px;
     }
 
-    .detalle-boton {
-      height: 52px;
+    .head {
+      gap: 8px;
+    }
+
+    .perfume-card h2 {
+      font-size: 19px;
+    }
+
+    .perfume-card .brand {
+      margin-top: 4px;
       font-size: 15px;
     }
 
-    .paginacion button {
-      width: 46px;
+    .gender {
+      padding: 5px 9px;
+      font-size: 10px;
+    }
+
+    .desc {
+      min-height: 0;
+      margin: 11px 0;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .info > div {
+      padding-block: 10px;
+    }
+
+    .info strong {
+      margin-top: 4px;
+      font-size: 15px;
+    }
+
+    .detalle-boton {
       height: 46px;
+      margin-top: 13px;
+      border-radius: 12px;
+      font-size: 13px;
+    }
+
+    .paginacion {
+      margin-top: 24px;
+      gap: 8px;
+    }
+
+    .paginacion button {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      font-size: 14px;
+    }
+  }
+
+  @media (max-width: 380px) {
+    .catalog-title {
+      font-size: 32px;
+    }
+
+    .filtros-toggle {
+      min-width: 94px;
+      padding-inline: 10px;
+    }
+
+    .info strong {
+      font-size: 14px;
     }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .trend-card,
-    .trend-image img,
     .card,
     .detalle-boton,
     .aroma-chip,
-    .paginacion button {
+    .paginacion button,
+    .filtros-toggle-mark {
       transition: none;
     }
-
-    .trend-skeleton {
-      animation: none;
-    }
-  }
-
-  /* Nuite luxury polish */
-  .discovery,
-  .featured-brands,
-  .catalogo {
-    background:
-      linear-gradient(180deg, #030303 0%, #090805 48%, #020202 100%);
-    color: var(--champagne);
-  }
-
-  .discovery {
-    border-top: 1px solid rgba(212, 175, 55, 0.16);
-  }
-
-  .featured-brands {
-    border-color: rgba(212, 175, 55, 0.18);
-  }
-
-  .section-kicker,
-  .catalog-kicker {
-    color: var(--gold2);
-  }
-
-  .section-heading h2,
-  .catalog-title {
-    color: var(--champagne);
-    letter-spacing: -0.03em;
-  }
-
-  .section-heading > a,
-  .section-heading > a span,
-  .trend-body small,
-  .trend-body b,
-  .brand-feature-copy span,
-  .brand-feature-copy b {
-    color: var(--gold2);
-  }
-
-  .section-heading-dark > p,
-  .intro {
-    color: #c4b99f;
-  }
-
-  .trend-card,
-  .filtros,
-  .card,
-  .sin-resultados {
-    border-color: rgba(212, 175, 55, 0.2);
-    background:
-      linear-gradient(180deg, rgba(212, 175, 55, 0.08), transparent 42%),
-      #0d0c09;
-    box-shadow: 0 22px 70px rgba(0, 0, 0, 0.42);
-  }
-
-  .trend-card:hover,
-  .card:hover {
-    border-color: rgba(241, 216, 137, 0.58);
-    box-shadow: 0 28px 82px rgba(0, 0, 0, 0.52), 0 0 34px rgba(212, 175, 55, 0.12);
-  }
-
-  .trend-image,
-  .imgbox,
-  .favorite-image {
-    background:
-      linear-gradient(145deg, #efe2c2 0%, #b9963a 42%, #100f0b 100%);
-  }
-
-  .trend-image img,
-  .imgbox img {
-    background: transparent;
-  }
-
-  .brand-feature,
-  .brand-feature-2,
-  .brand-feature-3 {
-    border-color: rgba(212, 175, 55, 0.24);
-    background:
-      linear-gradient(150deg, rgba(212, 175, 55, 0.22), transparent 38%),
-      linear-gradient(180deg, #191409 0%, #080808 68%);
-    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.48);
-  }
-
-  .brand-product {
-    background: linear-gradient(145deg, #efe4c7, #b89539 48%, #11100c);
-    box-shadow: 0 22px 52px rgba(0, 0, 0, 0.48), 0 0 0 1px rgba(212, 175, 55, 0.18);
-  }
-
-  .brand-feature-copy,
-  .info div,
-  .fragancia,
-  .size {
-    border: 1px solid rgba(212, 175, 55, 0.17);
-    background: rgba(6, 6, 5, 0.92);
-  }
-
-  .filtros input,
-  .fila-filtros select {
-    border: 1px solid rgba(212, 175, 55, 0.2);
-    background: #050505;
-    color: var(--champagne);
-  }
-
-  .filtros input:focus,
-  .fila-filtros select:focus {
-    border-color: rgba(241, 216, 137, 0.62);
-    box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.12);
-  }
-
-  .fila-filtros button,
-  .tag,
-  .detalle-boton,
-  .aroma-chip.activo,
-  .paginacion button.activo {
-    background: linear-gradient(135deg, var(--gold2), var(--gold) 54%, #9c741b);
-    color: #050505;
-  }
-
-  .aroma-chip,
-  .paginacion button,
-  .gender {
-    border-color: rgba(212, 175, 55, 0.2);
-    background: #080806;
-    color: #d8cfb8;
-  }
-
-  .perfume-card .brand,
-  .size strong,
-  .fragancia strong,
-  .stock {
-    color: var(--gold2);
-  }
-
-  .desc,
-  .contador {
-    color: #bdb29a;
-  }
-
-  .trend-skeleton {
-    background: linear-gradient(100deg, #11100c 20%, #2b2412 40%, #11100c 60%);
-    background-size: 200% 100%;
   }
 </style>

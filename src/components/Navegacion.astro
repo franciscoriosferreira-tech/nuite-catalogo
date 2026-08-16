@@ -23,17 +23,6 @@ const rutaActual = Astro.url.pathname;
       </span>
     </a>
 
-    <form class="header-search" data-catalog-search>
-      <label class="sr-only" for="header-search-input">Buscar en el catálogo</label>
-      <span aria-hidden="true" class="search-mark"></span>
-      <input
-        id="header-search-input"
-        type="search"
-        placeholder="¿Qué perfume estás buscando?"
-        autocomplete="off"
-      />
-      <button type="submit">Buscar</button>
-    </form>
 
     <div class="header-actions">
       <a
@@ -50,7 +39,8 @@ const rutaActual = Astro.url.pathname;
         rel="noreferrer"
         class="contact-link"
       >
-        Hablar por WhatsApp
+        <span class="desktop-label">Hablar por WhatsApp</span>
+        <span class="mobile-label">WhatsApp</span>
       </a>
     </div>
   </div>
@@ -78,12 +68,8 @@ const rutaActual = Astro.url.pathname;
         </div>
       </div>
 
-      <a href="/favoritos" aria-current={rutaActual === "/favoritos" ? "page" : undefined}>Favoritos</a>
-      <a href="/perfumes?genero=Hombre#catalogo">Hombre</a>
-      <a href="/perfumes?genero=Mujer#catalogo">Mujer</a>
-      <a href="/perfumes?genero=Unisex#catalogo">Unisex</a>
-      <a href="/ofertas">Ofertas</a>
-      <a href="/contacto">Contacto</a>
+      <a href="/ofertas" aria-current={rutaActual === "/ofertas" ? "page" : undefined}>Ofertas</a>
+      <a href="/contacto" aria-current={rutaActual === "/contacto" ? "page" : undefined}>Contacto</a>
     </nav>
   </div>
 
@@ -96,21 +82,6 @@ const rutaActual = Astro.url.pathname;
 </header>
 
 <script>
-  document.querySelectorAll("[data-catalog-search]").forEach((form) => {
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      const input = form.querySelector("input");
-      const value = input?.value?.trim() || "";
-
-      if (window.location.pathname !== "/perfumes") {
-        window.location.href = `/perfumes?buscar=${encodeURIComponent(value)}#catalogo`;
-        return;
-      }
-
-      window.dispatchEvent(new CustomEvent("nuite:buscar", { detail: value }));
-      document.querySelector("#catalogo")?.scrollIntoView({ behavior: "smooth" });
-    });
-  });
   const siteHeader = document.querySelector(".site-header");
   const brandDropdown = document.querySelector("[data-brand-dropdown]");
   const brandToggle = document.querySelector("[data-brand-toggle]");
@@ -153,37 +124,40 @@ const rutaActual = Astro.url.pathname;
     position: sticky;
     top: 0;
     z-index: 80;
-    color: #fff;
-    background: #070707;
-    box-shadow: 0 10px 35px rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.18);
+    background: rgba(3, 3, 3, 0.97);
+    color: var(--champagne);
+    box-shadow: 0 14px 42px rgba(0, 0, 0, 0.46);
   }
 
   .header-main {
     max-width: 1380px;
-    min-height: 84px;
+    min-height: 76px;
     margin: 0 auto;
-    padding: 12px 28px;
-    display: grid;
-    grid-template-columns: auto minmax(340px, 1fr) auto;
+    padding: 10px 28px;
+    display: flex;
     align-items: center;
-    gap: 34px;
+    justify-content: space-between;
+    gap: 24px;
   }
 
   .brand {
     display: inline-flex;
     align-items: center;
     gap: 12px;
-    color: #fff;
+    color: var(--champagne);
   }
 
   .logo-circle {
-    width: 56px;
-    height: 56px;
+    width: 52px;
+    height: 52px;
     display: grid;
     place-items: center;
     overflow: hidden;
+    border: 1px solid rgba(212, 175, 55, 0.46);
     border-radius: 50%;
     background: #050505;
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.08);
   }
 
   .logo-circle img {
@@ -199,112 +173,61 @@ const rutaActual = Astro.url.pathname;
   }
 
   .brand-text strong {
+    color: var(--champagne);
     font-family: Georgia, "Times New Roman", serif;
-    font-size: 31px;
-    letter-spacing: -0.04em;
+    font-size: 29px;
+    letter-spacing: 0;
   }
 
   .brand-text small {
     margin-top: 5px;
+    color: var(--champagne);
     font-size: 9px;
     font-weight: 900;
-    letter-spacing: 0.32em;
-  }
-
-  .header-search {
-    height: 50px;
-    display: grid;
-    grid-template-columns: 22px 1fr auto;
-    align-items: center;
-    gap: 10px;
-    padding: 5px 6px 5px 18px;
-    border: 1px solid rgba(255, 255, 255, 0.13);
-    border-radius: 999px;
-    background: #171717;
-  }
-
-  .search-mark {
-    position: relative;
-    width: 14px;
-    height: 14px;
-    border: 2px solid var(--gold);
-    border-radius: 50%;
-  }
-
-  .search-mark::after {
-    content: "";
-    position: absolute;
-    right: -5px;
-    bottom: -3px;
-    width: 7px;
-    height: 2px;
-    background: var(--gold);
-    transform: rotate(45deg);
-    transform-origin: left center;
-  }
-
-  .header-search input {
-    width: 100%;
-    min-width: 0;
-    height: 38px;
-    padding: 0;
-    border: 0;
-    outline: 0;
-    background: transparent;
-    color: #fff;
-    font: inherit;
-    font-size: 14px;
-  }
-
-  .header-search button {
-    height: 38px;
-    padding: 0 20px;
-    border: 0;
-    border-radius: 999px;
-    background: var(--gold);
-    color: #080808;
-    font-size: 12px;
-    font-weight: 900;
-    cursor: pointer;
+    letter-spacing: 0;
   }
 
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 9px;
   }
 
   .header-actions a {
-    min-height: 42px;
-    padding: 0 17px;
+    min-height: 40px;
+    padding: 0 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
+    border-radius: 11px;
     font-size: 12px;
     font-weight: 900;
     white-space: nowrap;
   }
 
   .quiet-link {
-    border: 1px solid rgba(255, 255, 255, 0.16);
-    color: #fff;
+    border: 1px solid rgba(212, 175, 55, 0.24);
+    color: var(--champagne);
+  }
+
+  .mobile-label {
+    display: none;
   }
 
   .contact-link {
-    background: var(--gold);
-    color: #080808;
+    background: linear-gradient(135deg, var(--gold2), var(--gold) 54%, #9c741b);
+    color: #050505;
   }
 
   .nav-row {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    background: #0d0d0d;
+    border-top: 1px solid rgba(212, 175, 55, 0.14);
+    border-bottom: 1px solid rgba(212, 175, 55, 0.14);
+    background: rgba(8, 8, 7, 0.96);
   }
 
   .menu {
     max-width: 1380px;
-    min-height: 47px;
+    min-height: 45px;
     margin: 0 auto;
     padding: 0 28px;
     display: flex;
@@ -317,7 +240,7 @@ const rutaActual = Astro.url.pathname;
 
   .menu > a,
   .dropdown > button {
-    height: 47px;
+    height: 45px;
     display: inline-flex;
     align-items: center;
     border: 0;
@@ -333,7 +256,8 @@ const rutaActual = Astro.url.pathname;
   .menu > a[aria-current="page"],
   .dropdown > button.activo,
   .dropdown > button:hover {
-    border-bottom-color: var(--gold);
+    border-bottom-color: var(--gold2);
+    color: var(--gold2);
   }
 
   .dropdown {
@@ -351,11 +275,11 @@ const rutaActual = Astro.url.pathname;
     width: 240px;
     padding: 12px;
     display: none;
-    border: 1px solid #292929;
-    border-radius: 0 0 18px 18px;
-    background: #111;
+    border: 1px solid rgba(212, 175, 55, 0.18);
+    border-radius: 0 0 16px 16px;
+    background: rgba(8, 8, 7, 0.98);
     color: #fff;
-    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.42);
   }
 
   .dropdown:hover .dropdown-menu,
@@ -364,27 +288,27 @@ const rutaActual = Astro.url.pathname;
   }
 
   .dropdown-menu a {
-    padding: 11px 13px;
-    border-radius: 10px;
+    padding: 10px 12px;
+    border-radius: 9px;
     font-size: 13px;
   }
 
   .dropdown-menu a:hover {
-    background: var(--gold);
-    color: #080808;
+    background: linear-gradient(135deg, var(--gold2), var(--gold));
+    color: #050505;
   }
 
   .benefit-strip {
-    min-height: 38px;
-    padding: 8px 28px;
+    min-height: 34px;
+    padding: 7px 28px;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 64px;
+    gap: 54px;
     overflow-x: auto;
-    background: #171717;
-    color: #d0d0d0;
-    font-size: 11px;
+    background: rgba(8, 8, 7, 0.96);
+    color: #c5baa2;
+    font-size: 10px;
     font-weight: 800;
     white-space: nowrap;
     scrollbar-width: none;
@@ -397,60 +321,20 @@ const rutaActual = Astro.url.pathname;
   .benefit-strip span {
     display: inline-flex;
     align-items: center;
-    gap: 9px;
+    gap: 8px;
   }
 
   .benefit-strip i {
-    width: 7px;
-    height: 7px;
+    width: 6px;
+    height: 6px;
     border-radius: 2px;
-    background: var(--gold);
+    background: var(--gold2);
   }
 
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  @media (max-width: 1120px) {
-    .header-main {
-      grid-template-columns: auto 1fr;
-      gap: 18px;
-    }
-
-    .header-search {
-      grid-column: 1 / -1;
-      grid-row: 2;
-    }
-
-    .header-actions {
-      justify-self: end;
-    }
-
-    .nav-row {
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-
-    .nav-row::-webkit-scrollbar {
-      display: none;
-    }
-
-    .menu {
-      width: max-content;
-      min-width: 100%;
-    }
-
+  @media (max-width: 820px) {
     .benefit-strip {
       justify-content: flex-start;
-      gap: 38px;
+      gap: 34px;
     }
   }
 
@@ -460,43 +344,59 @@ const rutaActual = Astro.url.pathname;
     }
 
     .header-main {
-      min-height: auto;
-      padding: 10px 16px 12px;
-      gap: 12px;
+      min-height: 62px;
+      padding: 8px 12px;
+      gap: 10px;
     }
 
     .logo-circle {
-      width: 44px;
-      height: 44px;
+      width: 42px;
+      height: 42px;
+    }
+
+    .brand {
+      gap: 9px;
     }
 
     .brand-text strong {
-      font-size: 24px;
+      font-size: 23px;
     }
 
-    .quiet-link {
-      display: none !important;
+    .brand-text small {
+      font-size: 8px;
+    }
+
+    .header-actions {
+      gap: 6px;
     }
 
     .header-actions a {
-      min-height: 38px;
-      padding: 0 13px;
-      font-size: 10px;
+      min-height: 37px;
+      padding: 0 9px;
+      border-radius: 10px;
+      font-size: 9px;
     }
 
-    .header-search {
-      height: 48px;
-      padding-left: 16px;
+    .desktop-label {
+      display: none;
     }
 
-    .header-search button {
-      padding: 0 15px;
+    .mobile-label {
+      display: inline;
     }
 
     .menu {
-      gap: 22px;
-      padding: 0 16px;
-      font-size: 12px;
+      width: 100%;
+      min-height: 42px;
+      padding: 0 12px;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+    }
+
+    .menu > a,
+    .dropdown > button {
+      height: 42px;
     }
 
     .dropdown {
@@ -505,17 +405,17 @@ const rutaActual = Astro.url.pathname;
 
     .dropdown-menu {
       position: fixed;
-      top: var(--mobile-brands-top, 176px);
+      top: var(--mobile-brands-top, 138px);
       right: 12px;
       left: 12px;
       z-index: 140;
       width: auto;
       max-height: min(56vh, 420px);
       overflow-y: auto;
-      padding: 12px;
+      padding: 10px;
       display: none;
-      gap: 4px;
-      border-radius: 18px;
+      gap: 3px;
+      border-radius: 15px;
       box-shadow: 0 26px 70px rgba(0, 0, 0, 0.68), 0 0 0 1px rgba(212, 175, 55, 0.16);
     }
 
@@ -528,90 +428,21 @@ const rutaActual = Astro.url.pathname;
     }
 
     .dropdown.dropdown-open > button {
-      color: var(--gold2);
       border-bottom-color: var(--gold2);
+      color: var(--gold2);
     }
 
     .dropdown-menu a {
-      min-height: 42px;
+      min-height: 40px;
       display: flex;
       align-items: center;
     }
+
     .benefit-strip {
-      padding-inline: 16px;
-      gap: 30px;
+      min-height: 31px;
+      padding: 6px 12px;
+      gap: 28px;
+      font-size: 9px;
     }
-  }
-
-  /* Nuite luxury polish */
-  .site-header {
-    background: rgba(3, 3, 3, 0.96);
-    border-bottom: 1px solid rgba(212, 175, 55, 0.18);
-    color: var(--champagne);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.48);
-  }
-
-  .logo-circle {
-    border: 1px solid rgba(212, 175, 55, 0.46);
-    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.08);
-  }
-
-  .brand-text strong,
-  .brand-text small {
-    color: var(--champagne);
-  }
-
-  .header-search,
-  .nav-row,
-  .benefit-strip,
-  .dropdown-menu {
-    border-color: rgba(212, 175, 55, 0.18);
-    background: rgba(8, 8, 7, 0.96);
-  }
-
-  .header-search input {
-    color: var(--champagne);
-  }
-
-  .header-search input::placeholder {
-    color: #8f856f;
-  }
-
-  .header-search button,
-  .contact-link {
-    background: linear-gradient(135deg, var(--gold2), var(--gold) 54%, #9c741b);
-    color: #050505;
-  }
-
-  .quiet-link {
-    border-color: rgba(212, 175, 55, 0.24);
-    color: var(--champagne);
-  }
-
-  .menu > a:hover,
-  .menu > a[aria-current="page"],
-  .dropdown > button.activo,
-  .dropdown > button:hover {
-    color: var(--gold2);
-    border-bottom-color: var(--gold2);
-  }
-
-  .dropdown-menu a:hover {
-    background: linear-gradient(135deg, var(--gold2), var(--gold));
-    color: #050505;
-  }
-
-  .benefit-strip {
-    color: #c5baa2;
-  }
-
-  .search-mark {
-    border-color: var(--gold2);
-    background: transparent;
-  }
-
-  .benefit-strip i,
-  .search-mark::after {
-    background-color: var(--gold2);
   }
 </style>
