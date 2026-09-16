@@ -3,9 +3,9 @@ const { vista = "favoritos" } = Astro.props;
 
 const contenido = vista === "marcas"
   ? {
-      kicker: "Casas destacadas",
-      titulo: "Explora nuestras marcas",
-      texto: "Descubre las casas con mayor variedad disponible y entra directamente a sus perfumes.",
+      kicker: "Perfumería árabe",
+      titulo: "Todas las marcas",
+      texto: "Elige una casa y descubre sus fragancias disponibles.",
     }
   : {
       kicker: "Selección Nuite",
@@ -26,7 +26,7 @@ const contenido = vista === "marcas"
   <section class="explore-content">
     <div class="explore-wrap">
       <div class="loading-grid" data-loading aria-label="Cargando contenido">
-        {Array.from({ length: vista === "marcas" ? 3 : 8 }).map(() => (
+        {Array.from({ length: vista === "marcas" ? 12 : 8 }).map(() => (
           <div class="loading-card" aria-hidden="true"></div>
         ))}
       </div>
@@ -70,6 +70,28 @@ const contenido = vista === "marcas"
       ? `/perfume?id=${encodeURIComponent(perfume.id)}`
       : `/perfume?slug=${encodeURIComponent(perfume.slug || "")}`;
 
+  const brandLogos = {
+    afnan: "/img/brands/afnan.webp",
+    armaf: "/img/brands/armaf.png",
+    asdaaf: "/img/brands/asdaaf.webp",
+    "dumont paris": "/img/brands/dumont.png",
+    "fragance world": "/img/brands/fragrance-world.png",
+    "fragrance world": "/img/brands/fragrance-world.png",
+    lattafa: "/img/brands/lattafa.jpg",
+    "maison alhambra": "/img/brands/maison-alhambra.webp",
+    "paris corner": "/img/brands/paris-corner.png",
+    rasasi: "/img/brands/rasasi.png",
+    rayhaan: "/img/brands/rayhaan.webp",
+    risala: "/img/brands/risala.jpg",
+    tubbees: "/img/brands/tubbees.jpg",
+  };
+
+  const normalizarMarca = (brand) => String(brand || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim();
+
   function renderFavorites(perfumes) {
     const favoritos = [...perfumes]
       .sort((a, b) => Number(b.stock || 0) - Number(a.stock || 0))
@@ -109,28 +131,24 @@ const contenido = vista === "marcas"
     const brands = Object.entries(groups)
       .sort(([, productsA], [, productsB]) => productsB.length - productsA.length);
 
-    brandsGrid.innerHTML = brands.map(([brand, products], index) => {
-      const samples = products.slice(0, 3);
+    brandsGrid.innerHTML = brands.map(([brand, products]) => {
+      const logo = brandLogos[normalizarMarca(brand)];
+      const countLabel = products.length === 1
+        ? "1 perfume disponible"
+        : `${products.length} perfumes disponibles`;
+
       return `
-        <a class="brand-card brand-card-${(index % 3) + 1}" href="/perfumes?marca=${encodeURIComponent(brand)}#catalogo">
-          <div class="brand-products">
-            ${samples.map((product, position) => `
-              <img
-                class="brand-product brand-product-${position + 1}"
-                src="${imagenPerfume(product)}"
-                alt=""
-                width="420"
-                height="520"
-                loading="lazy"
-                decoding="async"
-              />
-            `).join("")}
+        <a class="brand-card" href="/?marca=${encodeURIComponent(brand)}#catalogo">
+          <div class="brand-logo-wrap">
+            ${logo
+              ? `<img class="brand-logo" src="${logo}" alt="Logo de ${brand}" loading="lazy" decoding="async" />`
+              : `<span class="brand-monogram" aria-hidden="true">${brand.slice(0, 1)}</span>`}
           </div>
           <div class="brand-copy">
-            <small>Descubre</small>
+            <small>Casa de perfumería</small>
             <strong>${brand}</strong>
-            <span>${products.length} perfumes disponibles</span>
-            <b>Ver perfumes →</b>
+            <span>${countLabel}</span>
+            <b>Explorar fragancias →</b>
           </div>
         </a>
       `;
@@ -182,7 +200,7 @@ const contenido = vista === "marcas"
   }
 
   .explore-hero {
-    padding: 86px 24px 72px;
+    padding: 56px 24px 48px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.09);
     background:
       radial-gradient(circle at 78% 20%, rgba(255, 196, 0, 0.14), transparent 28%),
@@ -201,22 +219,22 @@ const contenido = vista === "marcas"
   .explore-hero h1 {
     max-width: 850px;
     margin: 0;
-    font-size: clamp(48px, 6vw, 82px);
-    line-height: 0.96;
-    letter-spacing: -0.055em;
+    font-size: clamp(38px, 5vw, 58px);
+    line-height: 1;
+    letter-spacing: 0;
   }
 
   .explore-hero span {
     max-width: 700px;
-    margin-top: 23px;
+    margin-top: 16px;
     display: block;
     color: #a8a8a8;
-    font-size: 17px;
-    line-height: 1.7;
+    font-size: 15px;
+    line-height: 1.55;
   }
 
   .explore-content {
-    padding: 62px 24px 92px;
+    padding: 38px 24px 82px;
   }
 
   .favorite-grid,
@@ -304,89 +322,58 @@ const contenido = vista === "marcas"
 
   .brands-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
   }
 
   .brand-card {
-    position: relative;
-    min-height: 500px;
+    min-height: 280px;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.11);
-    border-radius: 30px;
-    background:
-      radial-gradient(circle at 50% 32%, rgba(255, 196, 0, 0.21), transparent 35%),
-      linear-gradient(150deg, #241d08, #0e0e0e 62%);
-    color: #fff;
-  }
-
-  .brand-card-2 {
-    background:
-      radial-gradient(circle at 50% 32%, rgba(255, 216, 77, 0.15), transparent 35%),
-      linear-gradient(150deg, #272310, #0e0e0e 62%);
-  }
-
-  .brand-card-3 {
-    background:
-      radial-gradient(circle at 50% 32%, rgba(183, 141, 0, 0.23), transparent 35%),
-      linear-gradient(150deg, #201a0b, #0e0e0e 62%);
-  }
-
-  .brand-products {
-    position: relative;
-    height: 325px;
-    margin: 22px 18px 0;
-  }
-
-  .brand-product {
-    position: absolute;
-    bottom: 0;
-    left: 50%;
-    width: 54%;
-    height: 88%;
-    padding: 8px;
     border-radius: 20px;
-    background: #fff;
+    background:
+      linear-gradient(150deg, rgba(212, 175, 55, 0.13), transparent 42%),
+      #0b0a08;
+    color: #fff;
+    display: grid;
+    grid-template-rows: 148px 1fr;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .brand-logo-wrap {
+    margin: 14px 14px 0;
+    padding: 18px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(212, 175, 55, 0.18);
+    border-radius: 14px;
+    background: #f4efe3;
+  }
+
+  .brand-logo {
+    width: 100%;
+    height: 100%;
     object-fit: contain;
-    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.4);
-    transform: translateX(-50%);
   }
 
-  .brand-product-1 { z-index: 3; }
-
-  .brand-product-2,
-  .brand-product-3 {
-    bottom: 14px;
-    width: 43%;
-    height: 72%;
-    opacity: 0.82;
-  }
-
-  .brand-product-2 {
-    left: 25%;
-    transform: translateX(-50%) rotate(-8deg);
-  }
-
-  .brand-product-3 {
-    left: 75%;
-    transform: translateX(-50%) rotate(8deg);
+  .brand-monogram {
+    color: #17130a;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 54px;
   }
 
   .brand-copy {
-    position: absolute;
-    right: 18px;
-    bottom: 18px;
-    left: 18px;
-    padding: 18px 20px;
-    display: grid;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    background: rgba(5, 5, 5, 0.94);
+    min-width: 0;
+    padding: 14px 16px 16px;
+    display: flex;
+    flex-direction: column;
   }
 
   .brand-copy strong {
     margin-top: 5px;
-    font-size: 25px;
+    font-size: 20px;
+    line-height: 1.15;
   }
 
   .brand-copy span {
@@ -396,7 +383,8 @@ const contenido = vista === "marcas"
   }
 
   .brand-copy b {
-    margin-top: 15px;
+    margin-top: auto;
+    padding-top: 12px;
     color: var(--gold);
     font-size: 11px;
   }
@@ -430,23 +418,27 @@ const contenido = vista === "marcas"
     }
 
     .brands-grid {
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
 
   @media (max-width: 680px) {
     .explore-hero {
-      padding: 58px 16px 52px;
+      padding: 34px 16px 30px;
     }
 
     .explore-content {
-      padding: 36px 16px 68px;
+      padding: 22px 12px 68px;
     }
 
     .favorite-grid,
-    .loading-grid,
-    .brands-grid {
+    .loading-grid {
       grid-template-columns: 1fr;
+    }
+
+    .brands-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
     }
 
     .favorite-image {
@@ -454,7 +446,32 @@ const contenido = vista === "marcas"
     }
 
     .brand-card {
-      min-height: 480px;
+      min-height: 238px;
+      grid-template-rows: 112px 1fr;
+      border-radius: 16px;
+    }
+
+    .brand-logo-wrap {
+      margin: 9px 9px 0;
+      padding: 12px;
+      border-radius: 11px;
+    }
+
+    .brand-copy {
+      padding: 11px 12px 13px;
+    }
+
+    .brand-copy small {
+      font-size: 8px;
+    }
+
+    .brand-copy strong {
+      font-size: 16px;
+    }
+
+    .brand-copy span,
+    .brand-copy b {
+      font-size: 9px;
     }
   }
 
@@ -496,8 +513,6 @@ const contenido = vista === "marcas"
 
   .favorite-card,
   .brand-card,
-  .brand-card-2,
-  .brand-card-3,
   .explore-error {
     border-color: rgba(212, 175, 55, 0.22);
     background:
@@ -512,13 +527,11 @@ const contenido = vista === "marcas"
     box-shadow: 0 30px 88px rgba(0, 0, 0, 0.54), 0 0 34px rgba(212, 175, 55, 0.12);
   }
 
-  .favorite-image,
-  .brand-product {
+  .favorite-image {
     background: linear-gradient(145deg, #efe3c4, #b89539 48%, #11100c);
   }
 
-  .favorite-image span,
-  .brand-copy {
+  .favorite-image span {
     border: 1px solid rgba(212, 175, 55, 0.2);
     background: rgba(5, 5, 5, 0.92);
   }
