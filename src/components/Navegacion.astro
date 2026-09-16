@@ -215,12 +215,21 @@ const rutaActual = Astro.url.pathname;
     white-space: nowrap;
   }
 
-  .benefit-track,
-  .benefit-group {
+  .benefit-track {
     display: flex;
     align-items: center;
-    gap: var(--ticker-gap);
     width: max-content;
+  }
+
+  .benefit-group {
+    box-sizing: border-box;
+    display: flex;
+    flex: none;
+    align-items: center;
+    justify-content: space-around;
+    gap: var(--ticker-gap);
+    min-width: 100vw;
+    padding: 0 18px;
   }
 
   .benefit-track {
@@ -243,7 +252,7 @@ const rutaActual = Astro.url.pathname;
 
   @keyframes benefit-marquee {
     to {
-      transform: translateX(calc(-50% - (var(--ticker-gap) / 2)));
+      transform: translateX(-50%);
     }
   }
 
