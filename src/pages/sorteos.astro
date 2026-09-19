@@ -1,0 +1,93 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navegacion from "../components/Navegacion.astro";
+
+const whatsapp = "56935226409";
+const packs = [
+  { quantity: 1, price: "$1.000", image: "/img/sorteos/ticket-pack-1.png", featured: false },
+  { quantity: 3, price: "$2.500", image: "/img/sorteos/ticket-pack-3.png", featured: true },
+  { quantity: 5, price: "$4.000", image: "/img/sorteos/ticket-pack-5.png", featured: false },
+].map((pack) => ({
+  ...pack,
+  link: `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hola Nuité, quiero solicitar el pack de ${pack.quantity} ticket${pack.quantity === 1 ? "" : "s"} para el sorteo (${pack.price}).`)}`,
+}));
+---
+
+<Layout title="Sorteos | Nuité Perfumes">
+  <Navegacion />
+  <main class="raffle-page">
+    <section id="tickets" class="ticket-section raffle-wrap">
+      <p class="eyebrow">ELIGE TU PACK</p>
+      <h1>Más tickets, más oportunidades</h1>
+      <p class="section-lead">Elige un pack y escríbenos. Confirmaremos disponibilidad, pago y números directamente contigo.</p>
+      <div class="packs">
+        {packs.map((pack) => (
+          <article class:list={["pack", { featured: pack.featured }] }>
+            {pack.featured && <span class="badge">RECOMENDADO</span>}
+            <div class="pack-image"><img src={pack.image} alt={`Pack de ${pack.quantity} tickets Nuité`} /></div>
+            <div class="pack-copy">
+              <p><strong>{pack.quantity}</strong> ticket{pack.quantity === 1 ? "" : "s"}</p>
+              <b>{pack.price}</b>
+              <small>{pack.quantity} oportunidad{pack.quantity === 1 ? "" : "es"} de ganar</small>
+              <a href={pack.link} target="_blank" rel="noreferrer">Solicitar por WhatsApp</a>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div class="ticket-notice">
+        <strong>Importante</strong>
+        <p>Los tickets no se agregan al carrito de perfumes ni se pagan mediante Flow. La participación queda válida después de que Nuité confirme el pago y entregue tus números por WhatsApp.</p>
+      </div>
+    </section>
+
+    <section id="como-funciona" class="process-section">
+      <div class="raffle-wrap">
+        <p class="eyebrow">PROCESO CLARO</p>
+        <h2>¿Cómo funciona?</h2>
+        <div class="steps">
+          <article><span>01</span><h3>Elige tu pack</h3><p>Selecciona 1, 3 o 5 tickets según las oportunidades que quieras.</p></article>
+          <article><span>02</span><h3>Escríbenos</h3><p>El botón abre WhatsApp con el pack elegido y su precio ya indicado.</p></article>
+          <article><span>03</span><h3>Recibe tus números</h3><p>Tras confirmar disponibilidad y pago, Nuité asigna números únicos.</p></article>
+          <article><span>04</span><h3>Sigue el sorteo</h3><p>La fecha, premio y resultado se comunican por los canales oficiales.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="trust-section raffle-wrap">
+      <div>
+        <p class="eyebrow">TRANSPARENCIA</p>
+        <h2>Participación simple y verificable</h2>
+      </div>
+      <div class="trust-grid">
+        <article><strong>Número único</strong><p>Cada ticket confirmado corresponde a una participación independiente.</p></article>
+        <article><strong>Mismo peso</strong><p>Todos los tickets válidos tienen la misma probabilidad individual.</p></article>
+        <article><strong>Confirmación humana</strong><p>Verificamos cada solicitud y entregamos los números directamente.</p></article>
+        <article><strong>Canales oficiales</strong><p>Premio, fecha y resultado se publican desde las cuentas de Nuité.</p></article>
+      </div>
+      <p class="disclaimer">Comprar más tickets aumenta la cantidad de oportunidades, pero no garantiza ganar. Participan solamente los tickets confirmados como válidos.</p>
+    </section>
+  </main>
+</Layout>
+
+<style>
+  .raffle-page { background:#050505; color:#f1eadb; min-height:100vh; --raffle-gold:#e8c36a; }
+  .raffle-wrap { width:min(1180px,calc(100% - 40px)); margin:auto; }
+  .eyebrow { margin:0 0 13px; color:var(--raffle-gold); font-size:11px; font-weight:900; letter-spacing:.16em; }
+  .section-lead { color:#aaa297; line-height:1.65; }
+  .ticket-section { width:100%; max-width:none; padding:90px max(20px,calc((100% - 1180px)/2)) 100px; text-align:center; background:radial-gradient(circle at 50% 0,rgba(232,195,106,.12),transparent 35%),linear-gradient(180deg,#080704,#050505); }
+  .ticket-section h1 { margin:0; font-family:Georgia,serif; font-size:clamp(42px,5.5vw,68px); line-height:1; letter-spacing:-.04em; }
+  h2 { margin:0; font-family:Georgia,serif; font-size:clamp(37px,5vw,58px); letter-spacing:-.03em; }
+  .section-lead { max-width:680px; margin:16px auto 38px; }
+  .packs { display:grid; grid-template-columns:repeat(3,1fr); gap:17px; text-align:left; }
+  .pack { position:relative; padding:11px; border:1px solid rgba(232,195,106,.28); border-radius:15px; background:linear-gradient(155deg,#17140f,#090909); }
+  .pack.featured { border-color:var(--raffle-gold); box-shadow:0 20px 65px rgba(190,139,39,.13); }
+  .badge { position:absolute; z-index:2; top:-12px; left:50%; transform:translateX(-50%); padding:6px 13px; border-radius:999px; background:var(--raffle-gold); color:#100a02; font-size:9px; font-weight:1000; }
+  .pack-image { aspect-ratio:3/2; overflow:hidden; border-radius:10px; background:#080808; }.pack-image img{width:100%;height:100%;object-fit:contain}
+  .pack-copy { padding:17px 7px 6px; text-align:center; }.pack-copy p{margin:0;color:#ddd5c8;text-transform:uppercase;letter-spacing:.1em}.pack-copy p strong{color:var(--raffle-gold);font-size:23px}.pack-copy b{display:block;margin:4px 0;color:#f0cc74;font-size:37px}.pack-copy small{display:block;color:#8e877c}
+  .pack-copy a { min-height:48px; margin-top:17px; display:flex; align-items:center; justify-content:center; border-radius:9px; background:linear-gradient(100deg,#f2d17b,#c99737); color:#100a02; font-size:13px; font-weight:1000; }
+  .ticket-notice { max-width:850px; margin:28px auto 0; padding:17px 22px; border-left:3px solid var(--raffle-gold); background:rgba(232,195,106,.05); text-align:left; }.ticket-notice strong{color:var(--raffle-gold)}.ticket-notice p{margin:5px 0 0;color:#aaa297;line-height:1.55;font-size:13px}
+  .process-section { padding:95px 0; background:#090908; }.process-section h2{text-align:left}.steps{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:35px}.steps article{padding:25px;border:1px solid rgba(232,195,106,.18);border-radius:13px;background:#0e0d0a}.steps span{color:var(--raffle-gold);font-weight:900}.steps h3{margin:28px 0 9px}.steps p{margin:0;color:#918a7f;font-size:13px;line-height:1.55}
+  .trust-section { padding:100px 0; }.trust-section>div:first-child{text-align:center}.trust-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:36px}.trust-grid article{padding:23px;border:1px solid rgba(255,255,255,.09);border-radius:12px;background:#0b0b0a}.trust-grid strong{color:var(--raffle-gold)}.trust-grid p{color:#918a7f;font-size:13px;line-height:1.55}.disclaimer{max-width:800px;margin:28px auto 0;color:#756f66;font-size:12px;text-align:center;line-height:1.55}
+  @media(max-width:900px){.steps,.trust-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:650px){.raffle-wrap{width:min(100% - 26px,560px)}.packs,.steps,.trust-grid{grid-template-columns:1fr}.packs{max-width:430px;margin-inline:auto}.ticket-section{padding:70px 13px}.trust-section{padding:70px 0}.process-section{padding:70px 0}}
+</style>

@@ -117,6 +117,7 @@
     coincideValorExacto,
     normalizarTextoFiltro,
   } from "../data/perfumeFilters";
+  import { addToCart } from "../scripts/cart";
 
   const SUPABASE_URL = "https://anawpjjrtxzutillpnoz.supabase.co";
   const SUPABASE_KEY = "sb_publishable_s9BoS3q6FoCAHZ9BdPgH3g_uuR7UtNZ";
@@ -147,6 +148,13 @@
       maximumFractionDigits: 0,
     }).format(price || 0);
 
+  const escapeHtml = (value) => String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+
   function imagenPerfume(p) {
     return p.imagen_url || (p.imagen_local ? `/${p.imagen_local}` : "/img/logo.png");
   }
@@ -169,40 +177,40 @@
     article.innerHTML = `
       <div class="imgbox">
         <img
-          src="${imagenPerfume(p)}"
-          alt="${p.nombre || "Perfume"}"
+          src="${escapeHtml(imagenPerfume(p))}"
+          alt="${escapeHtml(p.nombre || "Perfume")}"
           loading="lazy"
           decoding="async"
         />
 
         <span class="tag">
-          ${p.tipo_fragancia || "Fragancia"}
+          ${escapeHtml(p.tipo_fragancia || "Fragancia")}
         </span>
 
         <div class="size">
           <small>TAMAÑO</small>
-          <strong>${p.ml || 100} ml</strong>
+          <strong>${escapeHtml(p.ml || 100)} ml</strong>
         </div>
       </div>
 
       <div class="body">
         <div class="head">
           <div>
-            <h2>${p.nombre || "Perfume sin nombre"}</h2>
-            <p class="brand">${p.marca || ""}</p>
+            <h2>${escapeHtml(p.nombre || "Perfume sin nombre")}</h2>
+            <p class="brand">${escapeHtml(p.marca || "")}</p>
           </div>
 
-          <span class="gender">${p.genero || "Unisex"}</span>
+          <span class="gender">${escapeHtml(p.genero || "Unisex")}</span>
         </div>
 
         <p class="desc">
-          ${p.descripcion || "Perfume disponible en Nuite Perfumes."}
+          ${escapeHtml(p.descripcion || "Perfume disponible en Nuite Perfumes.")}
         </p>
 
         <div class="info">
           <div>
             <small>PRECIO</small>
-            <strong>${formatPrice(p.precio || 0)}</strong>
+            <strong>${formatPrice(p.precio || p.precio_sugerido || 0)}</strong>
           </div>
 
           <div>
@@ -215,8 +223,20 @@
         <a class="detalle-boton" href="${detallePerfumeUrl(p)}">
           Ver detalles
         </a>
+        <button class="carrito-boton" type="button">Agregar al carrito</button>
       </div>
     `;
+
+    article.querySelector(".carrito-boton").addEventListener("click", () => {
+      addToCart({
+        id: p.id,
+        name: p.nombre || "Perfume",
+        brand: p.marca || "Nuité Perfumes",
+        image: imagenPerfume(p),
+        price: Number(p.precio || p.precio_sugerido || 0),
+        stock: Number(p.stock || 0),
+      });
+    });
 
     return article;
   }
@@ -780,6 +800,12 @@
     font-weight: 1000;
     text-decoration: none;
     transition: transform 180ms ease, filter 180ms ease;
+  }
+
+  .carrito-boton {
+    width: 100%; height: 43px; margin-top: 8px; border: 1px solid rgba(212,175,55,.35);
+    border-radius: 11px; background: #080806; color: var(--gold2); font: inherit;
+    font-size: 13px; font-weight: 1000; cursor: pointer;
   }
 
   .detalle-boton:hover {

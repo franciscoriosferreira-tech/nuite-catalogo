@@ -1,0 +1,127 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navegacion from "../components/Navegacion.astro";
+---
+
+<Layout title="Finalizar compra | Nuité Perfumes">
+  <Navegacion />
+  <main class="checkout-page">
+    <div class="checkout-wrap">
+      <section>
+        <p class="kicker">PAGO SEGURO</p>
+        <h1>Finaliza tu compra</h1>
+        <p class="lead">Revisa tus perfumes. El precio y la disponibilidad se validarán antes de enviarte al pago seguro de Flow.</p>
+        <div id="checkoutItems" class="checkout-items"></div>
+        <p id="checkoutEmpty" class="empty" hidden>Tu carrito está vacío. <a href="/perfumes">Explorar perfumes</a></p>
+      </section>
+
+      <aside class="order-box">
+        <h2>Resumen</h2>
+        <div class="order-total"><span>Total</span><strong id="checkoutTotal">$0</strong></div>
+        <form id="checkoutForm">
+          <label for="checkoutEmail">Correo para el comprobante</label>
+          <input id="checkoutEmail" name="email" type="email" autocomplete="email" required placeholder="tu@email.cl" />
+          <button id="payButton" type="submit">Pagar con Flow</button>
+          <p id="checkoutError" class="form-error" role="alert"></p>
+        </form>
+        <p class="secure-note">El pago se realiza en el portal seguro de Flow. Nuité no recibe los datos de tu tarjeta.</p>
+      </aside>
+    </div>
+  </main>
+</Layout>
+
+<script>
+  import { cartTotal, readCart } from "../scripts/cart";
+
+  const itemsBox = document.querySelector("#checkoutItems");
+  const empty = document.querySelector("#checkoutEmpty");
+  const totalBox = document.querySelector("#checkoutTotal");
+  const form = document.querySelector("#checkoutForm");
+  const errorBox = document.querySelector("#checkoutError");
+  const payButton = document.querySelector("#payButton");
+  const format = (value) => new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(value);
+
+  function render() {
+    const cart = readCart();
+    itemsBox.replaceChildren();
+    empty.hidden = cart.length > 0;
+    payButton.disabled = cart.length === 0;
+    totalBox.textContent = format(cartTotal(cart));
+
+    cart.forEach((item) => {
+      const row = document.createElement("article");
+      const image = document.createElement("img");
+      image.src = item.image || "/img/logo.png";
+      image.alt = "";
+      const copy = document.createElement("div");
+      const brand = document.createElement("small");
+      brand.textContent = item.brand;
+      const name = document.createElement("strong");
+      name.textContent = item.name;
+      const quantity = document.createElement("span");
+      quantity.textContent = `Cantidad: ${item.quantity}`;
+      const subtotal = document.createElement("b");
+      subtotal.textContent = format(item.price * item.quantity);
+      copy.append(brand, name, quantity);
+      row.append(image, copy, subtotal);
+      itemsBox.append(row);
+    });
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const cart = readCart();
+    const email = document.querySelector("#checkoutEmail").value;
+    errorBox.textContent = "";
+    payButton.disabled = true;
+    payButton.textContent = "Preparando pago...";
+
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, items: cart.map(({ id, quantity }) => ({ id, quantity })) }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "No se pudo iniciar el pago.");
+      window.location.assign(result.redirectUrl);
+    } catch (error) {
+      errorBox.textContent = error instanceof Error ? error.message : "No se pudo iniciar el pago.";
+      payButton.disabled = false;
+      payButton.textContent = "Pagar con Flow";
+    }
+  });
+
+  window.addEventListener("nuite:cart-updated", render);
+  render();
+</script>
+
+<style>
+  .checkout-page { min-height: 72vh; padding: 58px 24px 90px; background: radial-gradient(circle at 80% 8%,rgba(212,175,55,.09),transparent 35%),#050505; color: var(--champagne); }
+  .checkout-wrap { max-width: 1180px; margin: auto; display: grid; grid-template-columns: 1fr 380px; gap: 46px; align-items: start; }
+  .kicker { margin: 0; color: var(--gold2); font-size: 11px; font-weight: 900; }
+  h1 { margin: 10px 0; font-size: clamp(38px,5vw,58px); }
+  .lead { max-width: 700px; margin: 0 0 30px; color: #aaa18e; line-height: 1.6; }
+  .checkout-items { display: grid; gap: 11px; }
+  .checkout-items article { display: grid; grid-template-columns: 82px 1fr auto; gap: 16px; align-items: center; padding: 12px; border: 1px solid rgba(212,175,55,.18); border-radius: 15px; background: #0d0c09; }
+  .checkout-items img { width: 82px; height: 82px; border-radius: 10px; background: #e8dcb9; object-fit: contain; }
+  .checkout-items small,.checkout-items strong,.checkout-items span { display: block; }
+  .checkout-items small { color: var(--gold2); font-size: 10px; }
+  .checkout-items strong { margin: 4px 0; }
+  .checkout-items span { color: #9d9584; font-size: 12px; }
+  .checkout-items b { color: var(--gold2); }
+  .order-box { position: sticky; top: 170px; padding: 25px; border: 1px solid rgba(212,175,55,.26); border-radius: 20px; background: linear-gradient(155deg,rgba(212,175,55,.06),transparent 45%),#0d0c09; }
+  .order-box h2 { margin: 0 0 20px; font-size: 25px; }
+  .order-total { display: flex; align-items: center; justify-content: space-between; padding: 17px 0; border-block: 1px solid rgba(212,175,55,.16); }
+  .order-total strong { color: var(--gold2); font-size: 27px; }
+  form { margin-top: 20px; }
+  label { display: block; margin-bottom: 8px; color: #c9bea7; font-size: 12px; font-weight: 800; }
+  input { width: 100%; height: 49px; padding: 0 13px; border: 1px solid rgba(212,175,55,.25); border-radius: 11px; background: #050505; color: #fff; font: inherit; }
+  form button { width: 100%; min-height: 51px; margin-top: 12px; border: 0; border-radius: 12px; background: linear-gradient(135deg,var(--gold2),var(--gold),#9c741b); color: #050505; font: inherit; font-weight: 1000; cursor: pointer; }
+  form button:disabled { opacity: .5; cursor: wait; }
+  .form-error { color: #ff8a8a; font-size: 12px; line-height: 1.45; }
+  .secure-note,.empty { color: #8f856f; font-size: 12px; line-height: 1.5; }
+  .empty a { color: var(--gold2); }
+  @media(max-width:850px){ .checkout-wrap{grid-template-columns:1fr}.order-box{position:static}.checkout-page{padding:36px 14px 70px} }
+  @media(max-width:520px){ .checkout-items article{grid-template-columns:66px 1fr}.checkout-items img{width:66px;height:72px}.checkout-items b{grid-column:2} }
+</style>

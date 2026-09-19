@@ -1,0 +1,59 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navegacion from "../components/Navegacion.astro";
+import { getServerConfig } from "../lib/server/flow";
+
+export const prerender = false;
+
+const orderId = Astro.url.searchParams.get("orden");
+let order = null;
+if (orderId) {
+  try {
+    const config = getServerConfig();
+    const result = await config.supabase
+      .from("store_orders")
+      .select("id,status,total_clp,created_at")
+      .eq("id", orderId)
+      .maybeSingle();
+    order = result.data;
+  } catch (error) {
+    console.error(error);
+  }
+}
+const paid = order?.status === "paid";
+const pending = order?.status === "pending";
+---
+
+<Layout title="Estado del pago | Nuité Perfumes">
+  <Navegacion />
+  <main class="payment-page">
+    <section class:list={["payment-card", { paid, pending }] }>
+      <span class="status-icon" aria-hidden="true">{paid ? "✓" : pending ? "…" : "!"}</span>
+      <p class="kicker">ESTADO DE TU ORDEN</p>
+      <h1>{paid ? "Pago confirmado" : pending ? "Pago en verificación" : "No pudimos confirmar el pago"}</h1>
+      <p>{paid
+        ? "Tu compra fue registrada correctamente. Te contactaremos con la información de entrega."
+        : pending
+          ? "Algunos medios de pago demoran unos minutos. Puedes volver a consultar esta página."
+          : "Si realizaste el pago, contáctanos por WhatsApp indicando el correo usado en la compra."}</p>
+      {order && <small>Orden {order.id.slice(0, 8).toUpperCase()}</small>}
+      <div class="payment-actions">
+        <a href="/perfumes">Volver al catálogo</a>
+        {!paid && <a class="quiet" href="https://wa.me/56935226409?text=Hola%20Nuit%C3%A9%2C%20necesito%20ayuda%20con%20un%20pago" target="_blank" rel="noreferrer">Pedir ayuda</a>}
+      </div>
+    </section>
+  </main>
+</Layout>
+
+{paid && <script>localStorage.removeItem("nuite-cart-v1");</script>}
+
+<style>
+  .payment-page { min-height: 70vh; display: grid; place-items: center; padding: 60px 20px; background: radial-gradient(circle,rgba(212,175,55,.1),transparent 45%),#050505; color: var(--champagne); }
+  .payment-card { width: min(620px,100%); padding: 45px; border: 1px solid rgba(255,110,110,.25); border-radius: 24px; background: #0d0c09; text-align: center; }
+  .payment-card.paid { border-color: rgba(94,214,157,.35); }.payment-card.pending{border-color:rgba(212,175,55,.3)}
+  .status-icon { width: 68px; height: 68px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 50%; background: rgba(212,175,55,.1); color: var(--gold2); font-size: 34px; }
+  .kicker { color: var(--gold2); font-size: 10px; font-weight: 900; }
+  h1 { margin: 10px 0 15px; font-size: clamp(31px,5vw,48px); } p { color:#aaa18e;line-height:1.6} small{color:#756d5e}
+  .payment-actions { display:flex;justify-content:center;gap:10px;margin-top:28px;flex-wrap:wrap}.payment-actions a{padding:13px 19px;border-radius:11px;background:var(--gold);color:#050505;font-weight:900}.payment-actions .quiet{border:1px solid rgba(212,175,55,.25);background:#080806;color:var(--gold2)}
+</style>
+

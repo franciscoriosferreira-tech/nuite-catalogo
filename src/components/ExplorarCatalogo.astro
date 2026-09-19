@@ -20,11 +20,26 @@ const contenido = vista === "marcas"
       <p>{contenido.kicker}</p>
       <h1>{contenido.titulo}</h1>
       <span>{contenido.texto}</span>
+      {vista === "marcas" && (
+        <button class="brand-filter-toggle" type="button" data-brand-filter-toggle aria-expanded="false" aria-controls="brandFilterPanel">
+          Filtrar marcas
+        </button>
+      )}
     </div>
   </section>
 
   <section class="explore-content">
     <div class="explore-wrap">
+      {vista === "marcas" && (
+        <div class="brand-filter-panel hidden" id="brandFilterPanel" data-brand-filter-panel>
+          <label for="brandSearch">Buscar una marca específica</label>
+          <div>
+            <input id="brandSearch" type="search" placeholder="Ejemplo: Lattafa" autocomplete="off" data-brand-search />
+            <button type="button" data-brand-clear>Limpiar</button>
+          </div>
+          <p data-brand-count></p>
+        </div>
+      )}
       <div class="loading-grid" data-loading aria-label="Cargando contenido">
         {Array.from({ length: vista === "marcas" ? 12 : 8 }).map(() => (
           <div class="loading-card" aria-hidden="true"></div>
@@ -32,6 +47,7 @@ const contenido = vista === "marcas"
       </div>
       <div class:list={["favorite-grid", { hidden: vista !== "favoritos" }]} data-favorites></div>
       <div class:list={["brands-grid", { hidden: vista !== "marcas" }]} data-brands></div>
+      <p class="brand-empty hidden" data-brand-empty>No encontramos una marca con ese nombre.</p>
       <p class="explore-error hidden" data-error>
         No pudimos cargar esta selección. Inténtalo nuevamente en unos minutos.
       </p>
@@ -53,6 +69,12 @@ const contenido = vista === "marcas"
   const favoriteGrid = root?.querySelector("[data-favorites]");
   const brandsGrid = root?.querySelector("[data-brands]");
   const errorMessage = root?.querySelector("[data-error]");
+  const brandFilterToggle = root?.querySelector("[data-brand-filter-toggle]");
+  const brandFilterPanel = root?.querySelector("[data-brand-filter-panel]");
+  const brandSearch = root?.querySelector("[data-brand-search]");
+  const brandClear = root?.querySelector("[data-brand-clear]");
+  const brandCount = root?.querySelector("[data-brand-count]");
+  const brandEmpty = root?.querySelector("[data-brand-empty]");
 
   const formatPrice = (price) =>
     new Intl.NumberFormat("es-CL", {
@@ -138,7 +160,7 @@ const contenido = vista === "marcas"
         : `${products.length} perfumes disponibles`;
 
       return `
-        <a class="brand-card" href="/?marca=${encodeURIComponent(brand)}#catalogo">
+        <a class="brand-card" data-brand-name="${normalizarMarca(brand)}" href="/?marca=${encodeURIComponent(brand)}#catalogo">
           <div class="brand-logo-wrap">
             ${logo
               ? `<img class="brand-logo" data-logo="${normalizarMarca(brand)}" src="${logo}" alt="Logo de ${brand}" loading="lazy" decoding="async" />`
@@ -153,7 +175,39 @@ const contenido = vista === "marcas"
         </a>
       `;
     }).join("");
+
+    filtrarMarcas();
   }
+
+  function filtrarMarcas() {
+    if (!brandsGrid) return;
+    const query = normalizarMarca(brandSearch?.value || "");
+    const cards = [...brandsGrid.querySelectorAll("[data-brand-name]")];
+    let visible = 0;
+
+    cards.forEach((card) => {
+      const matches = !query || card.dataset.brandName.includes(query);
+      card.classList.toggle("hidden", !matches);
+      if (matches) visible += 1;
+    });
+
+    if (brandCount) brandCount.textContent = query
+      ? `${visible} marca${visible === 1 ? "" : "s"} encontrada${visible === 1 ? "" : "s"}`
+      : `${cards.length} marcas disponibles`;
+    brandEmpty?.classList.toggle("hidden", visible > 0);
+  }
+
+  brandFilterToggle?.addEventListener("click", () => {
+    const open = brandFilterPanel?.classList.toggle("hidden") === false;
+    brandFilterToggle.setAttribute("aria-expanded", String(open));
+    if (open) brandSearch?.focus();
+  });
+  brandSearch?.addEventListener("input", filtrarMarcas);
+  brandClear?.addEventListener("click", () => {
+    if (brandSearch) brandSearch.value = "";
+    filtrarMarcas();
+    brandSearch?.focus();
+  });
 
   async function loadPerfumes() {
     const params = new URLSearchParams({
@@ -235,6 +289,86 @@ const contenido = vista === "marcas"
 
   .explore-content {
     padding: 38px 24px 82px;
+  }
+
+  .brand-filter-toggle {
+    min-height: 43px;
+    margin-top: 24px;
+    padding: 0 18px;
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    border-radius: 11px;
+    background: #0b0a08;
+    color: var(--gold2);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .brand-filter-toggle[aria-expanded="true"] {
+    background: linear-gradient(135deg, var(--gold2), var(--gold), #9c741b);
+    color: #050505;
+  }
+
+  .brand-filter-panel {
+    max-width: 660px;
+    margin-bottom: 26px;
+    padding: 17px;
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: 16px;
+    background: #0d0c09;
+  }
+
+  .brand-filter-panel label {
+    display: block;
+    margin-bottom: 8px;
+    color: #d5cab2;
+    font-size: 12px;
+    font-weight: 900;
+  }
+
+  .brand-filter-panel > div {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 8px;
+  }
+
+  .brand-filter-panel input {
+    min-width: 0;
+    height: 46px;
+    padding: 0 14px;
+    border: 1px solid rgba(212, 175, 55, 0.22);
+    border-radius: 10px;
+    outline: 0;
+    background: #050505;
+    color: var(--champagne);
+    font: inherit;
+  }
+
+  .brand-filter-panel button {
+    padding: 0 16px;
+    border: 0;
+    border-radius: 10px;
+    background: var(--gold);
+    color: #050505;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 900;
+    cursor: pointer;
+  }
+
+  .brand-filter-panel p {
+    margin: 9px 0 0;
+    color: #8f856f;
+    font-size: 11px;
+  }
+
+  .brand-empty {
+    padding: 24px;
+    border: 1px solid rgba(212,175,55,.2);
+    border-radius: 16px;
+    color: #bfb49b;
+    text-align: center;
   }
 
   .favorite-grid,
@@ -460,6 +594,14 @@ const contenido = vista === "marcas"
 
     .explore-content {
       padding: 22px 12px 68px;
+    }
+
+    .brand-filter-panel > div {
+      grid-template-columns: 1fr;
+    }
+
+    .brand-filter-panel button {
+      min-height: 42px;
     }
 
     .favorite-grid,

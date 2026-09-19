@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import CartDrawer from "../components/CartDrawer.astro";
 
 const { title = "Nuite Perfumes" } = Astro.props;
 ---
@@ -14,5 +15,6 @@ const { title = "Nuite Perfumes" } = Astro.props;
 
   <body>
     <slot />
+    <CartDrawer />
   </body>
 </html>
