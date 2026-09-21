@@ -1,36 +1,134 @@
 ---
 import Layout from "../layouts/Layout.astro";
 import Navegacion from "../components/Navegacion.astro";
+import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
 ---
 
 <Layout title="Finalizar compra | Nuité Perfumes">
   <Navegacion />
   <main class="checkout-page">
-    <div class="checkout-wrap">
-      <section>
+    <form id="checkoutForm" class="checkout-wrap">
+      <section class="checkout-main">
         <p class="kicker">PAGO SEGURO</p>
         <h1>Finaliza tu compra</h1>
-        <p class="lead">Revisa tus perfumes. El precio y la disponibilidad se validarán antes de enviarte al pago seguro de Flow.</p>
+        <p class="lead">Revisa tus perfumes, completa tus datos y elige cómo quieres recibirlos. Validaremos el precio y el stock antes de enviarte al pago seguro de Flow.</p>
+
         <div class="checkout-list-head">
           <h2>Productos seleccionados</h2>
           <span id="checkoutCount"></span>
         </div>
         <div id="checkoutItems" class="checkout-items"></div>
         <p id="checkoutEmpty" class="empty" hidden>Tu carrito está vacío. <a href="/perfumes">Explorar perfumes</a></p>
+
+        <section class="checkout-card" aria-labelledby="contactTitle">
+          <div class="step-heading">
+            <span>1</span>
+            <div><small>DATOS DEL COMPRADOR</small><h2 id="contactTitle">¿A quién entregamos?</h2></div>
+          </div>
+          <div class="field-grid">
+            <label class="field wide">
+              <span>Nombre completo</span>
+              <input id="customerName" name="customerName" type="text" autocomplete="name" required minlength="3" maxlength="90" placeholder="Nombre y apellido" />
+            </label>
+            <label class="field">
+              <span>Correo para el comprobante</span>
+              <input id="checkoutEmail" name="email" type="email" autocomplete="email" required maxlength="160" placeholder="tu@email.cl" />
+            </label>
+            <label class="field">
+              <span>Teléfono</span>
+              <input id="customerPhone" name="phone" type="tel" autocomplete="tel" required maxlength="18" placeholder="+56 9 1234 5678" />
+            </label>
+          </div>
+        </section>
+
+        <section class="checkout-card" aria-labelledby="deliveryTitle">
+          <div class="step-heading">
+            <span>2</span>
+            <div><small>FORMA DE ENTREGA</small><h2 id="deliveryTitle">¿Cómo recibes tu pedido?</h2></div>
+          </div>
+
+          <div class="delivery-options">
+            <label class="delivery-option selected">
+              <input type="radio" name="deliveryMethod" value="pickup" checked />
+              <span class="delivery-icon" aria-hidden="true">⌖</span>
+              <span><strong>Retiro coordinado</strong><small>En Río Bueno · sin costo</small></span>
+              <span class="radio-dot" aria-hidden="true"></span>
+            </label>
+            <label class="delivery-option">
+              <input type="radio" name="deliveryMethod" value="shipping_collect" />
+              <span class="delivery-icon" aria-hidden="true">▰</span>
+              <span><strong>Envío por pagar</strong><small>A domicilio · pagas al recibir</small></span>
+              <span class="radio-dot" aria-hidden="true"></span>
+            </label>
+          </div>
+
+          <div id="pickupDetails" class="delivery-message">
+            <strong>Retiro en Río Bueno</strong>
+            <p>Después del pago coordinaremos por WhatsApp el lugar y el horario que nos acomode a ambos.</p>
+          </div>
+
+          <div id="shippingFields" class="shipping-fields" hidden>
+            <div class="field-grid">
+              <label class="field">
+                <span>Región</span>
+                <select id="shippingRegion" name="region" autocomplete="address-level1">
+                  <option value="">Selecciona una región</option>
+                  {CHILE_REGIONS.map((region) => <option value={region}>{region}</option>)}
+                </select>
+              </label>
+              <label class="field">
+                <span>Comuna</span>
+                <input id="shippingCommune" name="commune" type="text" autocomplete="address-level2" maxlength="70" placeholder="Ej.: Osorno" />
+              </label>
+              <label class="field wide-address">
+                <span>Calle o sector</span>
+                <input id="shippingAddress" name="address" type="text" autocomplete="street-address" maxlength="140" placeholder="Ej.: Pedro Lagos" />
+              </label>
+              <label class="field address-number">
+                <span>Número</span>
+                <input id="shippingAddressNumber" name="addressNumber" type="text" maxlength="15" placeholder="123" />
+              </label>
+              <label class="field wide">
+                <span>Departamento, parcela o referencia <em>Opcional</em></span>
+                <input id="shippingAddressExtra" name="addressExtra" type="text" maxlength="140" placeholder="Ej.: Depto. 4, casa azul o camino rural" />
+              </label>
+              <label class="field wide">
+                <span>Empresa de transporte preferida</span>
+                <select id="shippingCarrier" name="carrier">
+                  <option value="">Selecciona una empresa</option>
+                  {SHIPPING_CARRIERS.map((carrier) => <option value={carrier.id}>{carrier.name}</option>)}
+                </select>
+              </label>
+            </div>
+
+            <div class="delivery-message collect-message">
+              <strong>El envío se paga al recibir</strong>
+              <p>Flow cobrará solamente los perfumes. Prepararemos el paquete y te confirmaremos por WhatsApp la empresa disponible y el valor informado por el transportista antes de despacharlo.</p>
+            </div>
+            <div class="prepaid-coming">
+              <span>PRÓXIMA ETAPA</span>
+              <p>El pago anticipado del despacho aparecerá aquí cuando conectemos una cuenta de transporte con tarifas reales.</p>
+            </div>
+          </div>
+
+          <label class="field order-notes">
+            <span>Indicaciones para la entrega <em>Opcional</em></span>
+            <textarea id="deliveryNotes" name="notes" maxlength="300" rows="3" placeholder="Cuéntanos cualquier detalle que debamos considerar"></textarea>
+          </label>
+        </section>
       </section>
 
       <aside class="order-box">
         <h2>Resumen</h2>
-        <div class="order-total"><span>Total</span><strong id="checkoutTotal">$0</strong></div>
-        <form id="checkoutForm">
-          <label for="checkoutEmail">Correo para el comprobante</label>
-          <input id="checkoutEmail" name="email" type="email" autocomplete="email" required placeholder="tu@email.cl" />
-          <button id="payButton" type="submit">Pagar con Flow</button>
-          <p id="checkoutError" class="form-error" role="alert"></p>
-        </form>
-        <p class="secure-note">El pago se realiza en el portal seguro de Flow. Nuité no recibe los datos de tu tarjeta.</p>
+        <div class="summary-line"><span>Productos</span><strong id="productsTotal">$0</strong></div>
+        <div class="summary-line"><span>Entrega</span><strong id="shippingSummary">Retiro sin costo</strong></div>
+        <div class="order-total"><span>Total en Flow</span><strong id="checkoutTotal">$0</strong></div>
+        <p id="summaryHelp" class="summary-help">Retiras en Río Bueno, en un lugar y horario coordinado por WhatsApp.</p>
+        <button id="payButton" type="submit">Pagar productos con Flow</button>
+        <p id="checkoutError" class="form-error" role="alert" aria-live="polite"></p>
+        <p class="secure-note">Flow procesa el pago de forma segura. Nuité no recibe los datos de tu tarjeta.</p>
       </aside>
-    </div>
+    </form>
   </main>
 </Layout>
 
@@ -40,18 +138,48 @@ import Navegacion from "../components/Navegacion.astro";
   const itemsBox = document.querySelector("#checkoutItems");
   const empty = document.querySelector("#checkoutEmpty");
   const totalBox = document.querySelector("#checkoutTotal");
+  const productsTotalBox = document.querySelector("#productsTotal");
+  const shippingSummary = document.querySelector("#shippingSummary");
+  const summaryHelp = document.querySelector("#summaryHelp");
   const form = document.querySelector("#checkoutForm");
   const errorBox = document.querySelector("#checkoutError");
   const payButton = document.querySelector("#payButton");
   const countBox = document.querySelector("#checkoutCount");
+  const pickupDetails = document.querySelector("#pickupDetails");
+  const shippingFields = document.querySelector("#shippingFields");
   const format = (value) => new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(value);
+
+  function getDeliveryMethod() {
+    return document.querySelector("input[name='deliveryMethod']:checked")?.value || "pickup";
+  }
+
+  function setDeliveryMode() {
+    const shipping = getDeliveryMethod() === "shipping_collect";
+    pickupDetails.hidden = shipping;
+    shippingFields.hidden = !shipping;
+    shippingFields.querySelectorAll("input, select").forEach((field) => {
+      field.disabled = !shipping;
+      if (["shippingRegion", "shippingCommune", "shippingAddress", "shippingAddressNumber", "shippingCarrier"].includes(field.id)) {
+        field.required = shipping;
+      }
+    });
+    document.querySelectorAll(".delivery-option").forEach((option) => {
+      option.classList.toggle("selected", option.querySelector("input")?.checked);
+    });
+    shippingSummary.textContent = shipping ? "Por pagar al recibir" : "Retiro sin costo";
+    summaryHelp.textContent = shipping
+      ? "Flow cobrará solo los productos. El despacho se paga directamente al transportista al recibir."
+      : "Retiras en Río Bueno, en un lugar y horario coordinado por WhatsApp.";
+  }
 
   function render() {
     const cart = readCart();
+    const productsTotal = cartTotal(cart);
     itemsBox.replaceChildren();
     empty.hidden = cart.length > 0;
     payButton.disabled = cart.length === 0;
-    totalBox.textContent = format(cartTotal(cart));
+    totalBox.textContent = format(productsTotal);
+    productsTotalBox.textContent = format(productsTotal);
     const unitCount = cart.reduce((sum, item) => sum + item.quantity, 0);
     countBox.textContent = `${unitCount} ${unitCount === 1 ? "producto" : "productos"}`;
 
@@ -81,19 +209,47 @@ import Navegacion from "../components/Navegacion.astro";
     });
   }
 
+  document.querySelectorAll("input[name='deliveryMethod']").forEach((radio) => {
+    radio.addEventListener("change", setDeliveryMode);
+  });
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
     const cart = readCart();
-    const email = document.querySelector("#checkoutEmail").value;
+    const data = new FormData(form);
+    const method = getDeliveryMethod();
     errorBox.textContent = "";
+
+    if (cart.length === 0) {
+      errorBox.textContent = "Tu carrito está vacío.";
+      return;
+    }
+
     payButton.disabled = true;
     payButton.textContent = "Preparando pago...";
+
+    const delivery = {
+      method,
+      customerName: String(data.get("customerName") || ""),
+      phone: String(data.get("phone") || ""),
+      region: method === "shipping_collect" ? String(data.get("region") || "") : "",
+      commune: method === "shipping_collect" ? String(data.get("commune") || "") : "",
+      address: method === "shipping_collect" ? String(data.get("address") || "") : "",
+      addressNumber: method === "shipping_collect" ? String(data.get("addressNumber") || "") : "",
+      addressExtra: method === "shipping_collect" ? String(data.get("addressExtra") || "") : "",
+      carrier: method === "shipping_collect" ? String(data.get("carrier") || "") : "",
+      notes: String(data.get("notes") || ""),
+    };
 
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, items: cart.map(({ id, quantity }) => ({ id, quantity })) }),
+        body: JSON.stringify({
+          email: String(data.get("email") || ""),
+          delivery,
+          items: cart.map(({ id, quantity }) => ({ id, quantity })),
+        }),
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "No se pudo iniciar el pago.");
@@ -101,74 +257,30 @@ import Navegacion from "../components/Navegacion.astro";
     } catch (error) {
       errorBox.textContent = error instanceof Error ? error.message : "No se pudo iniciar el pago.";
       payButton.disabled = false;
-      payButton.textContent = "Pagar con Flow";
+      payButton.textContent = "Pagar productos con Flow";
     }
   });
 
   window.addEventListener("nuite:cart-updated", render);
+  setDeliveryMode();
   render();
 </script>
 
 <style>
-  .checkout-page { min-height: 72vh; padding: 58px 24px 90px; background: radial-gradient(circle at 80% 8%,rgba(212,175,55,.09),transparent 35%),#050505; color: var(--champagne); }
-  .checkout-wrap { max-width: 1180px; margin: auto; display: grid; grid-template-columns: 1fr 380px; gap: 46px; align-items: start; }
-  .kicker { margin: 0; color: var(--gold2); font-size: 11px; font-weight: 900; }
-  h1 { margin: 10px 0; font-size: clamp(38px,5vw,58px); }
-  .lead { max-width: 700px; margin: 0 0 30px; color: #aaa18e; line-height: 1.6; }
-  .checkout-list-head { display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:12px }.checkout-list-head h2{margin:0;font-size:20px}.checkout-list-head span{color:#978f7f;font-size:12px;font-weight:800}
-  .checkout-items { display: grid; gap: 11px; }
-  .checkout-items article { display: grid; grid-template-columns: 82px 1fr auto; gap: 16px; align-items: center; padding: 12px; border: 1px solid rgba(212,175,55,.18); border-radius: 15px; background: #0d0c09; }
-  .checkout-items img { width: 82px; height: 82px; border-radius: 10px; background: #e8dcb9; object-fit: contain; }
-  .checkout-items small,.checkout-items strong,.checkout-items span { display: block; }
-  .checkout-items small { color: var(--gold2); font-size: 10px; }
-  .checkout-items strong { margin: 4px 0; }
-  .checkout-items span { color: #9d9584; font-size: 12px; }
-  .checkout-items b { color: var(--gold2); }
-  .order-box { position: sticky; top: 170px; padding: 25px; border: 1px solid rgba(212,175,55,.26); border-radius: 20px; background: linear-gradient(155deg,rgba(212,175,55,.06),transparent 45%),#0d0c09; }
-  .order-box h2 { margin: 0 0 20px; font-size: 25px; }
-  .order-total { display: flex; align-items: center; justify-content: space-between; padding: 17px 0; border-block: 1px solid rgba(212,175,55,.16); }
-  .order-total strong { color: var(--gold2); font-size: 27px; }
-  form { margin-top: 20px; }
-  label { display: block; margin-bottom: 8px; color: #c9bea7; font-size: 12px; font-weight: 800; }
-  input { width: 100%; height: 49px; padding: 0 13px; border: 1px solid rgba(212,175,55,.25); border-radius: 11px; background: #050505; color: #fff; font: inherit; }
-  form button { width: 100%; min-height: 51px; margin-top: 12px; border: 0; border-radius: 12px; background: linear-gradient(135deg,var(--gold2),var(--gold),#9c741b); color: #050505; font: inherit; font-weight: 1000; cursor: pointer; }
-  form button:disabled { opacity: .5; cursor: wait; }
-  .form-error { color: #ff8a8a; font-size: 12px; line-height: 1.45; }
-  .secure-note,.empty { color: #8f856f; font-size: 12px; line-height: 1.5; }
-  .empty a { color: var(--gold2); }
-  @media(max-width:850px){ .checkout-wrap{grid-template-columns:1fr}.order-box{position:static}.checkout-page{padding:36px 14px 70px} }
-  @media(max-width:520px){ .checkout-items article{grid-template-columns:66px 1fr}.checkout-items img{width:66px;height:72px}.checkout-items b{grid-column:2} }
-  @media(max-width:520px){
-    .checkout-page{padding:28px 12px 48px}.checkout-wrap{gap:22px}.kicker{font-size:9px}h1{margin:7px 0;font-size:34px}.lead{margin-bottom:20px;font-size:13px;line-height:1.45}.checkout-list-head h2{font-size:17px}.order-box{padding:18px;border-radius:16px}.order-box h2{margin-bottom:12px;font-size:21px}.order-total{padding:13px 0}.order-total strong{font-size:23px}form{margin-top:14px}input{height:46px}form button{min-height:47px}.secure-note{margin-bottom:0}
-  }
+  .checkout-page { min-height:72vh;padding:52px 24px 90px;background:radial-gradient(circle at 80% 8%,rgba(212,175,55,.09),transparent 35%),#050505;color:var(--champagne) }
+  .checkout-wrap { max-width:1180px;margin:auto;display:grid;grid-template-columns:minmax(0,1fr) 370px;gap:42px;align-items:start }
+  .checkout-main { min-width:0 }.kicker{margin:0;color:var(--gold2);font-size:11px;font-weight:900}h1{margin:9px 0;font-size:clamp(38px,5vw,56px)}.lead{max-width:740px;margin:0 0 28px;color:#aaa18e;line-height:1.55}
+  .checkout-list-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:12px}.checkout-list-head h2{margin:0;font-size:20px}.checkout-list-head span{color:#978f7f;font-size:12px;font-weight:800}.checkout-items{display:grid;gap:10px}.empty{color:#8f856f;font-size:12px}.empty a{color:var(--gold2)}
+  .checkout-card{margin-top:20px;padding:22px;border:1px solid rgba(212,175,55,.18);border-radius:19px;background:#0d0c09}.step-heading{display:flex;align-items:center;gap:13px;margin-bottom:20px}.step-heading>span{width:34px;height:34px;display:grid;place-items:center;flex:0 0 auto;border-radius:50%;background:var(--gold);color:#090704;font-weight:1000}.step-heading small{display:block;margin-bottom:3px;color:var(--gold2);font-size:9px;font-weight:900;letter-spacing:.13em}.step-heading h2{margin:0;font-size:21px}
+  .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:block}.field.wide{grid-column:1/-1}.field.wide-address{grid-column:span 1}.field span{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;color:#c9bea7;font-size:11px;font-weight:800}.field em{color:#766f61;font-size:9px;font-style:normal;font-weight:700}.field input,.field select,.field textarea{width:100%;border:1px solid rgba(212,175,55,.24);border-radius:11px;background:#050505;color:#fff;font:inherit;outline:none}.field input,.field select{height:47px;padding:0 12px}.field textarea{padding:12px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold2);box-shadow:0 0 0 3px rgba(212,175,55,.08)}.field select{color-scheme:dark}
+  .delivery-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}.delivery-option{position:relative;min-height:76px;display:grid;grid-template-columns:37px 1fr 18px;align-items:center;gap:10px;padding:13px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#070707;cursor:pointer}.delivery-option.selected{border-color:var(--gold2);background:linear-gradient(145deg,rgba(212,175,55,.09),#080705)}.delivery-option>input{position:absolute;opacity:0;pointer-events:none}.delivery-icon{width:37px;height:37px;display:grid;place-items:center;border-radius:10px;background:rgba(212,175,55,.1);color:var(--gold2);font-size:20px}.delivery-option strong,.delivery-option small{display:block}.delivery-option strong{margin-bottom:4px;font-size:13px}.delivery-option small{color:#8f8778;font-size:10px;line-height:1.35}.radio-dot{width:17px;height:17px;border:2px solid #5e5749;border-radius:50%}.selected .radio-dot{border:5px solid var(--gold2)}
+  .delivery-message{margin-top:14px;padding:14px 16px;border-left:3px solid var(--gold2);border-radius:8px;background:rgba(212,175,55,.055)}.delivery-message strong{color:var(--gold2);font-size:12px}.delivery-message p{margin:5px 0 0;color:#999080;font-size:12px;line-height:1.5}.shipping-fields{margin-top:16px}.collect-message{margin-top:16px}.prepaid-coming{margin-top:10px;padding:12px 14px;border:1px dashed rgba(212,175,55,.25);border-radius:10px}.prepaid-coming span{color:#8f856f;font-size:9px;font-weight:900;letter-spacing:.1em}.prepaid-coming p{margin:4px 0 0;color:#777064;font-size:11px;line-height:1.45}.order-notes{margin-top:16px}
+  .order-box{position:sticky;top:160px;padding:23px;border:1px solid rgba(212,175,55,.26);border-radius:20px;background:linear-gradient(155deg,rgba(212,175,55,.06),transparent 45%),#0d0c09}.order-box h2{margin:0 0 16px;font-size:24px}.summary-line,.order-total{display:flex;align-items:center;justify-content:space-between;gap:12px}.summary-line{padding:10px 0;color:#a69d8c;font-size:12px}.summary-line strong{color:#ddd4c3;text-align:right}.order-total{margin-top:7px;padding:16px 0;border-block:1px solid rgba(212,175,55,.16)}.order-total strong{color:var(--gold2);font-size:26px}.summary-help{margin:13px 0;color:#918879;font-size:11px;line-height:1.45}.order-box button{width:100%;min-height:51px;margin-top:3px;border:0;border-radius:12px;background:linear-gradient(135deg,var(--gold2),var(--gold),#9c741b);color:#050505;font:inherit;font-weight:1000;cursor:pointer}.order-box button:disabled{opacity:.5;cursor:wait}.form-error{margin:9px 0 0;color:#ff8a8a;font-size:12px;line-height:1.45}.secure-note{margin:14px 0 0;color:#8f856f;font-size:11px;line-height:1.5}
+  @media(max-width:850px){.checkout-wrap{grid-template-columns:1fr;gap:22px}.order-box{position:static}.checkout-page{padding:36px 14px 70px}}
+  @media(max-width:520px){.checkout-page{padding:26px 11px 46px}.kicker{font-size:9px}h1{margin:6px 0;font-size:33px}.lead{margin-bottom:18px;font-size:12px;line-height:1.45}.checkout-list-head h2{font-size:16px}.checkout-card{margin-top:14px;padding:14px;border-radius:15px}.step-heading{margin-bottom:14px}.step-heading>span{width:29px;height:29px}.step-heading h2{font-size:17px}.field-grid{grid-template-columns:1fr;gap:11px}.field.wide,.field.wide-address{grid-column:auto}.field input,.field select{height:44px;font-size:13px}.field textarea{font-size:13px}.delivery-options{grid-template-columns:1fr;gap:8px}.delivery-option{min-height:64px;padding:10px}.delivery-message{padding:12px 13px}.order-notes{margin-top:13px}.order-box{padding:17px;border-radius:16px}.order-box h2{font-size:20px}.order-total{padding:13px 0}.order-total strong{font-size:22px}.order-box button{min-height:47px;font-size:13px}}
 </style>
 
 <style is:global>
-  .checkout-items .checkout-product {
-    display: grid;
-    grid-template-columns: 74px minmax(0, 1fr) auto;
-    gap: 15px;
-    align-items: center;
-    padding: 13px;
-    border: 1px solid rgba(212,175,55,.18);
-    border-radius: 15px;
-    background: #0d0c09;
-  }
-  .checkout-items .checkout-product > img {
-    width: 74px;
-    height: 82px;
-    border-radius: 10px;
-    background: #e8dcb9;
-    object-fit: contain;
-  }
-  .checkout-product-copy { min-width: 0; }
-  .checkout-product-brand { display:block;color:var(--gold2);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em }
-  .checkout-product-name { display:block;margin:5px 0 8px;color:var(--champagne);font-size:16px;line-height:1.25 }
-  .checkout-product-quantity { width:fit-content;display:block;padding:5px 9px;border:1px solid rgba(212,175,55,.2);border-radius:999px;color:#aaa18e;font-size:11px }
-  .checkout-product-subtotal { color:var(--gold2);font-size:17px;white-space:nowrap }
-  @media(max-width:520px) {
-    .checkout-items .checkout-product { grid-template-columns:64px minmax(0,1fr);gap:12px }
-    .checkout-items .checkout-product > img { width:64px;height:72px }
-    .checkout-product-subtotal { grid-column:2;font-size:16px }
-  }
+  .checkout-items .checkout-product{display:grid;grid-template-columns:74px minmax(0,1fr) auto;gap:15px;align-items:center;padding:12px;border:1px solid rgba(212,175,55,.18);border-radius:15px;background:#0d0c09}.checkout-items .checkout-product>img{width:74px;height:82px;border-radius:10px;background:#e8dcb9;object-fit:contain}.checkout-product-copy{min-width:0}.checkout-product-brand{display:block;color:var(--gold2);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}.checkout-product-name{display:block;margin:5px 0 8px;color:var(--champagne);font-size:16px;line-height:1.25}.checkout-product-quantity{width:fit-content;display:block;padding:5px 9px;border:1px solid rgba(212,175,55,.2);border-radius:999px;color:#aaa18e;font-size:11px}.checkout-product-subtotal{color:var(--gold2);font-size:17px;white-space:nowrap}
+  @media(max-width:520px){.checkout-items .checkout-product{grid-template-columns:60px minmax(0,1fr);gap:10px;padding:10px}.checkout-items .checkout-product>img{width:60px;height:67px}.checkout-product-name{font-size:14px}.checkout-product-subtotal{grid-column:2;font-size:15px}}
 </style>

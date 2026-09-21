@@ -2,6 +2,7 @@
 import Layout from "../layouts/Layout.astro";
 import Navegacion from "../components/Navegacion.astro";
 import { getServerConfig } from "../lib/server/flow";
+import { SHIPPING_CARRIER_NAMES } from "../data/shipping";
 
 export const prerender = false;
 
@@ -12,7 +13,7 @@ if (orderId) {
     const config = getServerConfig();
     const result = await config.supabase
       .from("store_orders")
-      .select("id,status,total_clp,created_at")
+      .select("id,status,total_clp,created_at,delivery_method,shipping_payment_mode,shipping_carrier")
       .eq("id", orderId)
       .maybeSingle();
     order = result.data;
@@ -22,6 +23,9 @@ if (orderId) {
 }
 const paid = order?.status === "paid";
 const pending = order?.status === "pending";
+const deliveryText = order?.delivery_method === "shipping"
+  ? `Envío por pagar${order.shipping_carrier ? ` mediante ${SHIPPING_CARRIER_NAMES[order.shipping_carrier] || order.shipping_carrier}` : ""}. Te contactaremos antes del despacho.`
+  : "Retiro coordinado en Río Bueno. Te escribiremos para acordar el lugar y el horario.";
 ---
 
 <Layout title="Estado del pago | Nuité Perfumes">
@@ -36,6 +40,7 @@ const pending = order?.status === "pending";
         : pending
           ? "Algunos medios de pago demoran unos minutos. Puedes volver a consultar esta página."
           : "Si realizaste el pago, contáctanos por WhatsApp indicando el correo usado en la compra."}</p>
+      {paid && order && <p class="delivery-result">{deliveryText}</p>}
       {order && <small>Orden {order.id.slice(0, 8).toUpperCase()}</small>}
       <div class="payment-actions">
         <a href="/perfumes">Volver al catálogo</a>
@@ -54,6 +59,7 @@ const pending = order?.status === "pending";
   .status-icon { width: 68px; height: 68px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 50%; background: rgba(212,175,55,.1); color: var(--gold2); font-size: 34px; }
   .kicker { color: var(--gold2); font-size: 10px; font-weight: 900; }
   h1 { margin: 10px 0 15px; font-size: clamp(31px,5vw,48px); } p { color:#aaa18e;line-height:1.6} small{color:#756d5e}
+  .delivery-result{margin:18px auto 0;padding:13px 16px;border:1px solid rgba(212,175,55,.18);border-radius:12px;background:rgba(212,175,55,.05);color:#d5cab4;font-size:13px}
   .payment-actions { display:flex;justify-content:center;gap:10px;margin-top:28px;flex-wrap:wrap}.payment-actions a{padding:13px 19px;border-radius:11px;background:var(--gold);color:#050505;font-weight:900}.payment-actions .quiet{border:1px solid rgba(212,175,55,.25);background:#080806;color:var(--gold2)}
   @media(max-width:520px){.payment-page{padding:34px 12px}.payment-card{padding:25px 17px;border-radius:18px}.status-icon{width:54px;height:54px;margin-bottom:14px;font-size:27px}h1{font-size:32px}.payment-card p{font-size:13px;line-height:1.5}.payment-actions{margin-top:20px}.payment-actions a{width:100%;min-height:45px;padding:0 14px;display:flex;align-items:center;justify-content:center}}
 </style>
