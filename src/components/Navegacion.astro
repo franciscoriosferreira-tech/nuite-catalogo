@@ -5,13 +5,7 @@ const rutaActual = Astro.url.pathname;
 <header class="site-header">
   <div class="header-main">
     <a href="/" class="brand" aria-label="Ir al inicio de Nuite Perfumes">
-      <span class="logo-circle">
-        <img src="/img/logo.png" alt="" width="64" height="64" />
-      </span>
-      <span class="brand-text">
-        <strong>Nuit&eacute;</strong>
-        <small>PERFUMES</small>
-      </span>
+      <img class="brand-logo" src="/img/logo.png" alt="Nuité Perfumes" width="220" height="96" />
     </a>
 
 
@@ -98,47 +92,15 @@ const rutaActual = Astro.url.pathname;
   .brand {
     display: inline-flex;
     align-items: center;
-    gap: 12px;
     color: var(--champagne);
   }
 
-  .logo-circle {
-    width: 64px;
-    height: 64px;
-    display: grid;
-    place-items: center;
-    overflow: hidden;
-    border: 1px solid rgba(212, 175, 55, 0.46);
-    border-radius: 50%;
-    background: #050505;
-    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.08);
-  }
-
-  .logo-circle img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .brand-text {
-    display: flex;
-    flex-direction: column;
-    line-height: 1;
-  }
-
-  .brand-text strong {
-    color: var(--champagne);
-    font-family: Georgia, "Times New Roman", serif;
-    font-size: 34px;
-    letter-spacing: 0;
-  }
-
-  .brand-text small {
-    margin-top: 6px;
-    color: var(--champagne);
-    font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 0;
+  .brand-logo {
+    width: 205px;
+    height: 70px;
+    display: block;
+    object-fit: contain;
+    object-position: left center;
   }
 
   .header-actions {
@@ -297,21 +259,9 @@ const rutaActual = Astro.url.pathname;
       gap: 8px;
     }
 
-    .logo-circle {
-      width: 44px;
-      height: 44px;
-    }
-
-    .brand {
-      gap: 8px;
-    }
-
-    .brand-text strong {
-      font-size: 22px;
-    }
-
-    .brand-text small {
-      display: none;
+    .brand-logo {
+      width: 118px;
+      height: 48px;
     }
 
     .header-actions {
@@ -369,19 +319,6 @@ const rutaActual = Astro.url.pathname;
       padding-inline: 8px;
     }
 
-    .brand {
-      gap: 6px;
-    }
-
-    .logo-circle {
-      width: 40px;
-      height: 40px;
-    }
-
-    .brand-text strong {
-      font-size: 20px;
-    }
-
     .header-actions a {
       padding-inline: 6px;
       font-size: 8.5px;
@@ -394,8 +331,8 @@ const rutaActual = Astro.url.pathname;
   }
 
   @media (max-width: 350px) {
-    .brand-text {
-      display: none;
+    .brand-logo {
+      width: 90px;
     }
   }
 
