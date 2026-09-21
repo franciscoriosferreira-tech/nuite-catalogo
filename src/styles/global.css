@@ -99,3 +99,14 @@ img {
   border: 1px solid var(--border);
   border-radius: 28px;
 }
+
+@media (max-width: 680px) {
+  html { scroll-padding-top: 8px; }
+  body { overflow-x: hidden; }
+  .container { padding-inline: 12px; }
+  .section { padding-block: 42px; }
+  .kicker { font-size: 10px; letter-spacing: 3px; }
+  .title { margin-top: 10px; font-size: 34px; }
+  .text { font-size: 14px; line-height: 1.55; }
+  input, select, textarea { font-size: 16px; }
+}

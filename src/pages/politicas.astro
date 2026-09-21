@@ -110,12 +110,19 @@ import Navegacion from "../components/Navegacion.astro";
   .legal-note { color: #9f9682; font-size: 13px; }
 
   @media (max-width: 520px) {
+    .pagina { padding: 34px 12px 52px; }
+    .kicker { font-size: 10px; letter-spacing: 3px; }
     h1 {
-      font-size: 38px;
+      margin-top: 8px;
+      font-size: 34px;
     }
-
+    .lista { margin-top: 24px; gap: 10px; }
     .card {
-      padding: 24px;
+      padding: 18px;
+      border-radius: 18px;
     }
+    h2 { font-size: 20px; }
+    p, ul { margin-top: 10px; font-size: 13px; line-height: 1.55; }
+    li + li { margin-top: 5px; }
   }
 </style>

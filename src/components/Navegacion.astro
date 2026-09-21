@@ -336,6 +336,16 @@ const rutaActual = Astro.url.pathname;
     }
   }
 
+  @media (max-width: 620px) {
+    .header-main { min-height: 58px; padding: 6px 9px; }
+    .brand-logo { width: 105px; height: 42px; }
+    .header-actions a, .cart-link { min-height: 38px; }
+    .cart-link { width: 38px; }
+    .menu { min-height: 40px; font-size: 11px; }
+    .menu > a { height: 40px; }
+    .benefit-strip { min-height: 28px; padding: 5px 0; font-size: 9px; }
+  }
+
   @media (prefers-reduced-motion: reduce) {
     .benefit-track {
       animation-duration: 80s;

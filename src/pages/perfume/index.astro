@@ -643,27 +643,51 @@ import Navegacion from '../../components/Navegacion.astro';
 
     @media (max-width: 520px) {
       .detalle {
-        padding: 22px 14px 48px;
+        padding: 16px 12px 42px;
       }
+
+      .volver { margin-bottom: 14px; font-size: 12px; }
+      .grid-detalle { gap: 18px; }
 
       .foto img {
-        height: 340px;
+        height: 255px;
       }
+
+      .foto { border-radius: 17px; }
+      .marca { margin-bottom: 7px; font-size: 10px; letter-spacing: 3px; }
+      h1 { font-size: 31px; }
+      .descripcion { margin: 10px 0 14px; font-size: 13px; }
 
       .notas {
-        padding: 16px;
+        margin-bottom: 15px;
+        padding: 13px;
+        border-radius: 16px;
       }
 
+      .notas h2 { margin-bottom: 10px; font-size: 11px; letter-spacing: 3px; }
+      .notas-grid { display:grid;grid-auto-flow:column;grid-auto-columns:82%;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none }
+      .notas-grid::-webkit-scrollbar{display:none}
+      .notas-grid div{scroll-snap-align:start;padding:12px}
+
       .precioBox strong {
-        font-size: 32px;
+        font-size: 29px;
       }
+
+      .precioBox { margin-bottom: 13px; }
+      .datos { grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:15px }
+      .datos div{padding:12px}.datos strong{font-size:13px}
 
       .whatsapp {
         width: 100%;
       }
 
-      .rating-box { align-items: flex-start; flex-direction: column; }
-      .purchase-row { grid-template-columns: 1fr; }
+      .rating-box { margin-bottom:12px;padding:13px;display:grid;grid-template-columns:1fr auto;gap:8px;border-radius:14px }
+      .rating-box>div:first-child strong{font-size:12px}.rating-box small{grid-column:1/-1}.rating-stars button{font-size:23px}
+      .purchase-panel{padding:13px;border-radius:16px}
+      .purchase-row { grid-template-columns: 126px 1fr; gap:8px }
+      .quantity-control{height:45px;grid-template-columns:38px 1fr 38px}.add-cart{min-height:45px;font-size:12px}
+      .whatsapp{min-height:45px;padding:10px 14px;border-radius:11px;font-size:13px}
+      .purchase-details{margin-top:12px}.purchase-details summary{padding:14px 2px;font-size:12px}.purchase-details p{font-size:12px}
       .purchase-subtotal { text-align: left; }
     }
   </style>
