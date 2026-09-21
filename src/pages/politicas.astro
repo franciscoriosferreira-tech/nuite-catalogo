@@ -15,29 +15,32 @@ import Navegacion from "../components/Navegacion.astro";
       <div class="lista">
         <div class="card">
           <h2>Cambios y devoluciones</h2>
-
-          <p>
-            No se realizan devoluciones en perfumes abiertos o usados.
-            Los productos deben mantenerse sellados y en perfectas condiciones.
-          </p>
+          <p>Para solicitar un cambio voluntario o ejercer el derecho a retracto cuando corresponda, el perfume debe conservarse sin uso, sellado, con su celofán, etiquetas, accesorios y embalaje original en perfecto estado.</p>
+          <ul>
+            <li>No recibimos perfumes abiertos, probados, rellenados, manipulados o con sellos de seguridad retirados.</li>
+            <li>Las solicitudes de retracto aplicables deben comunicarse dentro de los 10 días corridos siguientes a la recepción.</li>
+            <li>Los costos de envío de un cambio voluntario son responsabilidad del cliente.</li>
+            <li>Si el producto presenta una falla, daño de origen o no corresponde a lo comprado, se respetará la garantía legal vigente y Nuité coordinará la solución correspondiente.</li>
+          </ul>
+          <p class="legal-note">Estas condiciones no limitan los derechos irrenunciables establecidos por la Ley de Protección de los Derechos de los Consumidores.</p>
         </div>
 
         <div class="card">
           <h2>Envíos</h2>
 
           <p>
-            Realizamos envíos a todo Chile. El tiempo de entrega dependerá
-            de la región y empresa de transporte.
+            Realizamos envíos a regiones de Chile. Antes del despacho confirmamos el costo, la comuna de destino, la empresa de transporte y el plazo estimado. El cliente debe revisar que sus datos estén correctos y conservar el seguimiento del envío.
           </p>
         </div>
 
         <div class="card">
-          <h2>Reservas</h2>
+          <h2>Retiro en Río Bueno</h2>
+          <p>El retiro se realiza en Río Bueno, en un lugar y horario previamente acordados por WhatsApp. El pedido debe estar pagado o confirmado antes de coordinar la entrega.</p>
+        </div>
 
-          <p>
-            Las reservas de productos tendrán una duración máxima de 24 horas,
-            salvo acuerdo previo.
-          </p>
+        <div class="card">
+          <h2>Reserva durante el pago</h2>
+          <p>Al iniciar un pago, el inventario se reserva temporalmente durante 30 minutos. Si el pago no se completa o es rechazado, la disponibilidad se libera automáticamente. Una reserva distinta solo será válida cuando Nuité la confirme expresamente por WhatsApp.</p>
         </div>
       </div>
     </div>
@@ -95,6 +98,16 @@ import Navegacion from "../components/Navegacion.astro";
     line-height: 1.8;
     margin: 16px 0 0;
   }
+
+  ul {
+    margin: 16px 0 0;
+    padding-left: 20px;
+    color: #d0d0d0;
+    line-height: 1.75;
+  }
+
+  li + li { margin-top: 7px; }
+  .legal-note { color: #9f9682; font-size: 13px; }
 
   @media (max-width: 520px) {
     h1 {

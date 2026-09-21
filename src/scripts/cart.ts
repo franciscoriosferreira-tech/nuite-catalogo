@@ -24,11 +24,13 @@ export function writeCart(items: CartItem[]) {
   window.dispatchEvent(new CustomEvent("nuite:cart-updated", { detail: items }));
 }
 
-export function addToCart(item: Omit<CartItem, "quantity">) {
+export function addToCart(item: Omit<CartItem, "quantity">, requestedQuantity = 1) {
+  if (item.stock <= 0) return;
   const cart = readCart();
   const existing = cart.find((entry) => entry.id === item.id);
-  if (existing) existing.quantity = Math.min(existing.stock, existing.quantity + 1);
-  else cart.push({ ...item, quantity: 1 });
+  const quantity = Math.max(1, Math.floor(Number(requestedQuantity) || 1));
+  if (existing) existing.quantity = Math.min(existing.stock, existing.quantity + quantity);
+  else cart.push({ ...item, quantity: Math.min(item.stock, quantity) });
   writeCart(cart);
   window.dispatchEvent(new CustomEvent("nuite:cart-open"));
 }
@@ -47,4 +49,3 @@ export function clearCart() {
 
 export const cartTotal = (items: CartItem[]) =>
   items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-

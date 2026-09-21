@@ -44,7 +44,7 @@ import Navegacion from '../../components/Navegacion.astro';
               </div>
 
               <div>
-                <span>CORAZON</span>
+                <span>CORAZÓN</span>
                 <strong id="notaCorazon">No especificado</strong>
               </div>
 
@@ -62,12 +62,12 @@ import Navegacion from '../../components/Navegacion.astro';
 
           <div class="datos">
             <div>
-              <span>TAMANO</span>
+              <span>TAMAÑO</span>
               <strong id="tamanoPerfume">100 ml</strong>
             </div>
 
             <div>
-              <span>GENERO</span>
+              <span>GÉNERO</span>
               <strong id="generoPerfume">Unisex</strong>
             </div>
 
@@ -82,9 +82,50 @@ import Navegacion from '../../components/Navegacion.astro';
             </div>
           </div>
 
-          <a id="whatsappPerfume" class="whatsapp" target="_blank" rel="noreferrer">
-            Comprar por WhatsApp
-          </a>
+          <section class="rating-box" aria-labelledby="ratingTitle">
+            <div>
+              <span id="ratingTitle">TU CALIFICACIÓN</span>
+              <strong>¿Qué te pareció este perfume?</strong>
+            </div>
+            <div id="ratingStars" class="rating-stars" role="radiogroup" aria-label="Calificar perfume de 1 a 5 estrellas">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button type="button" data-rating={value} aria-label={`${value} estrella${value === 1 ? "" : "s"}`} aria-checked="false" role="radio">★</button>
+              ))}
+            </div>
+            <small id="ratingMessage">Selecciona de 1 a 5 estrellas.</small>
+          </section>
+
+          <section class="purchase-panel" aria-label="Opciones de compra">
+            <div class="purchase-row">
+              <div class="quantity-control" aria-label="Cantidad">
+                <button id="quantityMinus" type="button" aria-label="Disminuir cantidad">−</button>
+                <input id="productQuantity" type="number" min="1" value="1" inputmode="numeric" aria-label="Cantidad de unidades" />
+                <button id="quantityPlus" type="button" aria-label="Aumentar cantidad">+</button>
+              </div>
+              <button id="addProductToCart" class="add-cart" type="button">Agregar al carrito</button>
+            </div>
+            <p id="purchaseSubtotal" class="purchase-subtotal"></p>
+            <a id="whatsappPerfume" class="whatsapp" target="_blank" rel="noreferrer">
+              Comprar por WhatsApp
+            </a>
+            <p id="purchaseMessage" class="purchase-message" role="status" aria-live="polite"></p>
+
+            <div class="purchase-details">
+              <details>
+                <summary><span aria-hidden="true">🚚</span> Envío a domicilio</summary>
+                <p>Realizamos envíos a regiones de Chile. El valor y el plazo se confirman según la comuna y la empresa de transporte antes del despacho. Te enviaremos los datos de seguimiento cuando el pedido sea entregado al transportista.</p>
+              </details>
+              <details>
+                <summary><span aria-hidden="true">⌖</span> Retiro en Río Bueno</summary>
+                <p>El retiro se coordina directamente con Nuité en Río Bueno. El lugar y el horario se acuerdan por WhatsApp después de confirmar la compra.</p>
+              </details>
+              <details>
+                <summary><span aria-hidden="true">↩</span> Cambios y devoluciones</summary>
+                <p>Para cambios voluntarios o retracto cuando corresponda, el perfume debe mantenerse sin uso, sellado, con su celofán y embalaje original en perfecto estado. Por higiene y seguridad no recibimos perfumes abiertos, probados o con sellos retirados. Si el producto presenta una falla, daño de origen o no corresponde a lo comprado, se respetará íntegramente la garantía legal vigente. Contáctanos dentro de los 10 días siguientes a la recepción para revisar solicitudes de retracto aplicables.</p>
+                <a href="/politicas">Ver política completa</a>
+              </details>
+            </div>
+          </section>
         </div>
       </section>
     </div>
@@ -97,6 +138,7 @@ import Navegacion from '../../components/Navegacion.astro';
       aplicarCorreccionPerfume,
       normalizarNotasPerfume,
     } from "../../data/perfumeCorrections";
+    import { addToCart, readCart } from "../../scripts/cart";
 
     const supabase = createClient(
       "https://anawpjjrtxzutillpnoz.supabase.co",
@@ -104,6 +146,8 @@ import Navegacion from '../../components/Navegacion.astro';
     );
 
     const $ = (selector) => document.querySelector(selector);
+    let currentPerfume = null;
+    let selectedQuantity = 1;
 
     const formatPrice = (price) =>
       new Intl.NumberFormat("es-CL", {
@@ -132,6 +176,57 @@ import Navegacion from '../../components/Navegacion.astro';
         (perfume.imagen_local ? `/${perfume.imagen_local}` : "/img/logo.png");
     }
 
+    function getPrice(perfume) {
+      return Number(perfume?.precio || perfume?.precio_sugerido || 0);
+    }
+
+    function showPurchaseMessage(message, isError = false) {
+      const box = $("#purchaseMessage");
+      box.textContent = message;
+      box.classList.toggle("error", isError);
+    }
+
+    function updateWhatsappLink() {
+      if (!currentPerfume) return;
+      const total = getPrice(currentPerfume) * selectedQuantity;
+      $("#purchaseSubtotal").textContent = `${selectedQuantity} ${selectedQuantity === 1 ? "unidad" : "unidades"} · Total ${formatPrice(total)}`;
+      $("#whatsappPerfume").href = `https://wa.me/56935226409?text=${encodeURIComponent(
+        `Hola Nuité, quiero comprar ${selectedQuantity} ${selectedQuantity === 1 ? "unidad" : "unidades"} de ${currentPerfume.nombre || "este perfume"} de ${currentPerfume.marca || "Nuité"}. Total productos: ${formatPrice(total)}.`
+      )}`;
+    }
+
+    function setQuantity(value, reportLimit = true) {
+      if (!currentPerfume) return;
+      const stock = Number(currentPerfume.stock || 0);
+      const requested = Math.max(1, Math.floor(Number(value) || 1));
+
+      if (requested > stock) {
+        if (reportLimit) showPurchaseMessage(`No hay suficiente stock. Actualmente hay ${stock} ${stock === 1 ? "unidad disponible" : "unidades disponibles"}.`, true);
+        selectedQuantity = Math.max(1, stock);
+      } else {
+        selectedQuantity = requested;
+        showPurchaseMessage("");
+      }
+
+      $("#productQuantity").value = String(stock > 0 ? selectedQuantity : 0);
+      $("#quantityMinus").disabled = stock === 0 || selectedQuantity <= 1;
+      $("#quantityPlus").disabled = stock === 0 || selectedQuantity >= stock;
+      updateWhatsappLink();
+    }
+
+    function renderRating(perfumeId) {
+      const key = `nuite-rating-${perfumeId}`;
+      const saved = Number(localStorage.getItem(key) || 0);
+      $("#ratingStars").querySelectorAll("button").forEach((button) => {
+        const value = Number(button.dataset.rating);
+        button.classList.toggle("active", value <= saved);
+        button.setAttribute("aria-checked", String(value === saved));
+      });
+      $("#ratingMessage").textContent = saved
+        ? `Guardamos tu calificación: ${saved} de 5 estrellas.`
+        : "Selecciona de 1 a 5 estrellas.";
+    }
+
     function mostrarEstado(titulo, texto) {
       $("#detallePerfume").classList.add("oculto");
       $("#estadoCarga").classList.remove("oculto");
@@ -145,6 +240,8 @@ import Navegacion from '../../components/Navegacion.astro';
       const notas = normalizarNotasPerfume(perfume.notas);
       const stock = Number(perfume.stock || 0);
       const imagen = imagenPerfume(perfume);
+      currentPerfume = perfume;
+      selectedQuantity = stock > 0 ? 1 : 0;
 
       document.title = `${perfume.nombre || "Perfume"} | Nuite Perfumes`;
 
@@ -176,11 +273,44 @@ import Navegacion from '../../components/Navegacion.astro';
         stock > 0 ? `${stock} Disponible` : "Agotado";
       stockPerfume.className = stock > 0 ? "stock ok" : "stock no";
 
-      $("#whatsappPerfume").href =
-        `https://wa.me/56935226409?text=${encodeURIComponent(
-          `Hola, quiero comprar ${perfume.nombre || "este perfume"} de ${perfume.marca || "Nuite"}`
-        )}`;
+      $("#productQuantity").max = String(stock);
+      $("#productQuantity").disabled = stock === 0;
+      $("#addProductToCart").disabled = stock === 0;
+      $("#whatsappPerfume").setAttribute("aria-disabled", String(stock === 0));
+      if (stock === 0) $("#whatsappPerfume").removeAttribute("href");
+      setQuantity(stock > 0 ? 1 : 0, false);
+      renderRating(perfume.id);
     }
+
+    $("#quantityMinus").addEventListener("click", () => setQuantity(selectedQuantity - 1));
+    $("#quantityPlus").addEventListener("click", () => setQuantity(selectedQuantity + 1));
+    $("#productQuantity").addEventListener("input", (event) => setQuantity(event.currentTarget.value));
+
+    $("#addProductToCart").addEventListener("click", () => {
+      if (!currentPerfume) return;
+      const stock = Number(currentPerfume.stock || 0);
+      const alreadyInCart = readCart().find((item) => item.id === currentPerfume.id)?.quantity || 0;
+      if (alreadyInCart + selectedQuantity > stock) {
+        showPurchaseMessage(`No hay suficiente stock. Ya tienes ${alreadyInCart} en el carrito y quedan ${stock} unidades en total.`, true);
+        return;
+      }
+      addToCart({
+        id: currentPerfume.id,
+        name: currentPerfume.nombre || "Perfume",
+        brand: currentPerfume.marca || "Nuité Perfumes",
+        image: imagenPerfume(currentPerfume),
+        price: getPrice(currentPerfume),
+        stock,
+      }, selectedQuantity);
+      showPurchaseMessage(`${selectedQuantity} ${selectedQuantity === 1 ? "unidad agregada" : "unidades agregadas"} al carrito.`);
+    });
+
+    $("#ratingStars").addEventListener("click", (event) => {
+      const button = event.target.closest("button[data-rating]");
+      if (!button || !currentPerfume) return;
+      localStorage.setItem(`nuite-rating-${currentPerfume.id}`, button.dataset.rating);
+      renderRating(currentPerfume.id);
+    });
 
     async function cargarPerfume() {
       const referencia = obtenerReferenciaPerfume();
@@ -380,9 +510,8 @@ import Navegacion from '../../components/Navegacion.astro';
       border-radius: 16px;
       font-size: 15px;
       font-weight: 1000;
-      width: fit-content;
-      min-width: 280px;
-      margin: 0 auto;
+      width: 100%;
+      margin: 10px 0 0;
       transition: .25s;
     }
 
@@ -390,6 +519,104 @@ import Navegacion from '../../components/Navegacion.astro';
       transform: translateY(-2px);
       background: #ffd84d;
     }
+
+    .whatsapp[aria-disabled="true"] {
+      opacity: .45;
+      pointer-events: none;
+    }
+
+    .rating-box {
+      margin-bottom: 20px;
+      padding: 18px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      background: #0c0b09;
+    }
+
+    .rating-box > div:first-child span { margin-bottom: 5px; }
+    .rating-box small { color: #8d8575; line-height: 1.4; }
+    .rating-stars { display: flex; gap: 3px; }
+    .rating-stars button {
+      padding: 2px;
+      border: 0;
+      background: transparent;
+      color: #4f493e;
+      font-size: 27px;
+      line-height: 1;
+      cursor: pointer;
+    }
+    .rating-stars button.active,
+    .rating-stars button:hover { color: var(--gold2); }
+
+    .purchase-panel {
+      padding: 20px;
+      border: 1px solid var(--gold-border);
+      border-radius: 22px;
+      background: linear-gradient(145deg, rgba(212,175,55,.08), transparent 42%), #0d0c0a;
+    }
+
+    .purchase-row { display: grid; grid-template-columns: 170px 1fr; gap: 12px; }
+    .quantity-control {
+      height: 50px;
+      display: grid;
+      grid-template-columns: 48px 1fr 48px;
+      overflow: hidden;
+      border: 1px solid var(--gold-border);
+      border-radius: 13px;
+      background: #050505;
+    }
+    .quantity-control button,
+    .quantity-control input {
+      min-width: 0;
+      border: 0;
+      background: transparent;
+      color: #fff;
+      font: inherit;
+      font-weight: 900;
+      text-align: center;
+    }
+    .quantity-control button { color: var(--gold2); font-size: 22px; cursor: pointer; }
+    .quantity-control button:disabled { opacity: .28; cursor: not-allowed; }
+    .quantity-control input { width: 100%; appearance: textfield; }
+    .quantity-control input::-webkit-inner-spin-button { appearance: none; }
+    .add-cart {
+      min-height: 50px;
+      border: 1px solid var(--gold2);
+      border-radius: 13px;
+      background: transparent;
+      color: var(--champagne);
+      font: inherit;
+      font-weight: 1000;
+      cursor: pointer;
+    }
+    .add-cart:hover { background: rgba(212,175,55,.09); }
+    .add-cart:disabled { opacity: .4; cursor: not-allowed; }
+    .purchase-subtotal { margin: 11px 0 0; color: #aaa18e; font-size: 12px; text-align: right; }
+    .purchase-message { min-height: 18px; margin: 9px 0 0; color: #7ee0af; font-size: 12px; line-height: 1.45; }
+    .purchase-message.error { color: #ff8585; }
+    .purchase-details { margin-top: 18px; border-top: 1px solid rgba(255,255,255,.09); }
+    .purchase-details details { border-bottom: 1px solid rgba(255,255,255,.09); }
+    .purchase-details summary {
+      padding: 17px 3px;
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      color: var(--champagne);
+      font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      list-style: none;
+    }
+    .purchase-details summary::-webkit-details-marker { display: none; }
+    .purchase-details summary::after { content: "+"; margin-left: auto; color: var(--gold2); font-size: 20px; }
+    .purchase-details details[open] summary::after { content: "−"; }
+    .purchase-details summary span { margin: 0; color: var(--gold2); font-size: 18px; }
+    .purchase-details p { margin: -2px 3px 15px; color: #9d9585; font-size: 13px; line-height: 1.65; }
+    .purchase-details a { display: inline-flex; margin: -2px 3px 17px; color: var(--gold2); font-size: 12px; font-weight: 900; }
 
     .not-found {
       background: var(--card);
@@ -433,8 +660,11 @@ import Navegacion from '../../components/Navegacion.astro';
 
       .whatsapp {
         width: 100%;
-        min-width: unset;
       }
+
+      .rating-box { align-items: flex-start; flex-direction: column; }
+      .purchase-row { grid-template-columns: 1fr; }
+      .purchase-subtotal { text-align: left; }
     }
   </style>
 </Layout>

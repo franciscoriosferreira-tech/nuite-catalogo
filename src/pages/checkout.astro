@@ -11,6 +11,10 @@ import Navegacion from "../components/Navegacion.astro";
         <p class="kicker">PAGO SEGURO</p>
         <h1>Finaliza tu compra</h1>
         <p class="lead">Revisa tus perfumes. El precio y la disponibilidad se validarán antes de enviarte al pago seguro de Flow.</p>
+        <div class="checkout-list-head">
+          <h2>Productos seleccionados</h2>
+          <span id="checkoutCount"></span>
+        </div>
         <div id="checkoutItems" class="checkout-items"></div>
         <p id="checkoutEmpty" class="empty" hidden>Tu carrito está vacío. <a href="/perfumes">Explorar perfumes</a></p>
       </section>
@@ -39,6 +43,7 @@ import Navegacion from "../components/Navegacion.astro";
   const form = document.querySelector("#checkoutForm");
   const errorBox = document.querySelector("#checkoutError");
   const payButton = document.querySelector("#payButton");
+  const countBox = document.querySelector("#checkoutCount");
   const format = (value) => new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(value);
 
   function render() {
@@ -47,20 +52,28 @@ import Navegacion from "../components/Navegacion.astro";
     empty.hidden = cart.length > 0;
     payButton.disabled = cart.length === 0;
     totalBox.textContent = format(cartTotal(cart));
+    const unitCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+    countBox.textContent = `${unitCount} ${unitCount === 1 ? "producto" : "productos"}`;
 
     cart.forEach((item) => {
       const row = document.createElement("article");
+      row.className = "checkout-product";
       const image = document.createElement("img");
       image.src = item.image || "/img/logo.png";
       image.alt = "";
       const copy = document.createElement("div");
+      copy.className = "checkout-product-copy";
       const brand = document.createElement("small");
+      brand.className = "checkout-product-brand";
       brand.textContent = item.brand;
       const name = document.createElement("strong");
+      name.className = "checkout-product-name";
       name.textContent = item.name;
       const quantity = document.createElement("span");
+      quantity.className = "checkout-product-quantity";
       quantity.textContent = `Cantidad: ${item.quantity}`;
       const subtotal = document.createElement("b");
+      subtotal.className = "checkout-product-subtotal";
       subtotal.textContent = format(item.price * item.quantity);
       copy.append(brand, name, quantity);
       row.append(image, copy, subtotal);
@@ -102,6 +115,7 @@ import Navegacion from "../components/Navegacion.astro";
   .kicker { margin: 0; color: var(--gold2); font-size: 11px; font-weight: 900; }
   h1 { margin: 10px 0; font-size: clamp(38px,5vw,58px); }
   .lead { max-width: 700px; margin: 0 0 30px; color: #aaa18e; line-height: 1.6; }
+  .checkout-list-head { display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:12px }.checkout-list-head h2{margin:0;font-size:20px}.checkout-list-head span{color:#978f7f;font-size:12px;font-weight:800}
   .checkout-items { display: grid; gap: 11px; }
   .checkout-items article { display: grid; grid-template-columns: 82px 1fr auto; gap: 16px; align-items: center; padding: 12px; border: 1px solid rgba(212,175,55,.18); border-radius: 15px; background: #0d0c09; }
   .checkout-items img { width: 82px; height: 82px; border-radius: 10px; background: #e8dcb9; object-fit: contain; }
@@ -124,4 +138,34 @@ import Navegacion from "../components/Navegacion.astro";
   .empty a { color: var(--gold2); }
   @media(max-width:850px){ .checkout-wrap{grid-template-columns:1fr}.order-box{position:static}.checkout-page{padding:36px 14px 70px} }
   @media(max-width:520px){ .checkout-items article{grid-template-columns:66px 1fr}.checkout-items img{width:66px;height:72px}.checkout-items b{grid-column:2} }
+</style>
+
+<style is:global>
+  .checkout-items .checkout-product {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr) auto;
+    gap: 15px;
+    align-items: center;
+    padding: 13px;
+    border: 1px solid rgba(212,175,55,.18);
+    border-radius: 15px;
+    background: #0d0c09;
+  }
+  .checkout-items .checkout-product > img {
+    width: 74px;
+    height: 82px;
+    border-radius: 10px;
+    background: #e8dcb9;
+    object-fit: contain;
+  }
+  .checkout-product-copy { min-width: 0; }
+  .checkout-product-brand { display:block;color:var(--gold2);font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em }
+  .checkout-product-name { display:block;margin:5px 0 8px;color:var(--champagne);font-size:16px;line-height:1.25 }
+  .checkout-product-quantity { width:fit-content;display:block;padding:5px 9px;border:1px solid rgba(212,175,55,.2);border-radius:999px;color:#aaa18e;font-size:11px }
+  .checkout-product-subtotal { color:var(--gold2);font-size:17px;white-space:nowrap }
+  @media(max-width:520px) {
+    .checkout-items .checkout-product { grid-template-columns:64px minmax(0,1fr);gap:12px }
+    .checkout-items .checkout-product > img { width:64px;height:72px }
+    .checkout-product-subtotal { grid-column:2;font-size:16px }
+  }
 </style>
