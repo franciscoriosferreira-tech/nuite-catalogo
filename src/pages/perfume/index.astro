@@ -34,8 +34,8 @@ import Navegacion from '../../components/Navegacion.astro';
 
           <p id="descripcionPerfume" class="descripcion"></p>
 
-          <div class="notas">
-            <h2>NOTAS OLFATIVAS</h2>
+          <details id="notesDetails" class="notas" open>
+            <summary>NOTAS OLFATIVAS</summary>
 
             <div class="notas-grid">
               <div>
@@ -53,7 +53,7 @@ import Navegacion from '../../components/Navegacion.astro';
                 <strong id="notaFondo">No especificado</strong>
               </div>
             </div>
-          </div>
+          </details>
 
           <div class="precioBox">
             <span>PRECIO</span>
@@ -148,6 +148,11 @@ import Navegacion from '../../components/Navegacion.astro';
     const $ = (selector) => document.querySelector(selector);
     let currentPerfume = null;
     let selectedQuantity = 1;
+
+    $("#notesDetails")?.toggleAttribute(
+      "open",
+      !window.matchMedia("(max-width: 520px)").matches
+    );
 
     const formatPrice = (price) =>
       new Intl.NumberFormat("es-CL", {
@@ -437,12 +442,20 @@ import Navegacion from '../../components/Navegacion.astro';
       margin-bottom: 24px;
     }
 
-    .notas h2 {
+    .notas summary {
       margin: 0 0 16px;
       color: var(--gold);
       letter-spacing: 5px;
       font-size: 14px;
+      font-weight: 900;
+      cursor: pointer;
+      list-style: none;
     }
+
+    .notas summary::-webkit-details-marker { display: none; }
+    .notas summary::after { content: "−"; float: right; color: var(--gold2); font-size: 18px; letter-spacing: 0; }
+    .notas:not([open]) summary { margin-bottom: 0; }
+    .notas:not([open]) summary::after { content: "+"; }
 
     .notas-grid {
       display: grid;
@@ -654,36 +667,41 @@ import Navegacion from '../../components/Navegacion.astro';
       }
 
       .foto { border-radius: 17px; }
+      .info { display:flex;flex-direction:column; }
       .marca { margin-bottom: 7px; font-size: 10px; letter-spacing: 3px; }
+      .marca { order:1; }
       h1 { font-size: 31px; }
+      .info > h1 { order:2; }
       .descripcion { margin: 10px 0 14px; font-size: 13px; }
+      .descripcion { order:3; }
 
       .notas {
-        margin-bottom: 15px;
+        order:8;
+        margin: 14px 0 0;
         padding: 13px;
         border-radius: 16px;
       }
 
-      .notas h2 { margin-bottom: 10px; font-size: 11px; letter-spacing: 3px; }
-      .notas-grid { display:grid;grid-auto-flow:column;grid-auto-columns:82%;gap:8px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none }
-      .notas-grid::-webkit-scrollbar{display:none}
-      .notas-grid div{scroll-snap-align:start;padding:12px}
+      .notas summary { margin-bottom: 10px; font-size: 11px; letter-spacing: 3px; }
+      .notas:not([open]) summary { margin-bottom:0; }
+      .notas-grid { display:grid;grid-template-columns:1fr;gap:8px;overflow:visible }
+      .notas-grid div{padding:12px}
 
       .precioBox strong {
         font-size: 29px;
       }
 
-      .precioBox { margin-bottom: 13px; }
-      .datos { grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:15px }
+      .precioBox { order:4;margin-bottom:13px; }
+      .datos { order:5;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:15px }
       .datos div{padding:12px}.datos strong{font-size:13px}
 
       .whatsapp {
         width: 100%;
       }
 
-      .rating-box { margin-bottom:12px;padding:13px;display:grid;grid-template-columns:1fr auto;gap:8px;border-radius:14px }
+      .rating-box { order:7;margin:12px 0 0;padding:13px;display:grid;grid-template-columns:1fr auto;gap:8px;border-radius:14px }
       .rating-box>div:first-child strong{font-size:12px}.rating-box small{grid-column:1/-1}.rating-stars button{font-size:23px}
-      .purchase-panel{padding:13px;border-radius:16px}
+      .purchase-panel{order:6;padding:13px;border-radius:16px}
       .purchase-row { grid-template-columns: 126px 1fr; gap:8px }
       .quantity-control{height:45px;grid-template-columns:38px 1fr 38px}.add-cart{min-height:45px;font-size:12px}
       .whatsapp{min-height:45px;padding:10px 14px;border-radius:11px;font-size:13px}

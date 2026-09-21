@@ -20,19 +20,26 @@ const packs = [
       <p class="eyebrow">ELIGE TU PACK</p>
       <h1>Más tickets, más oportunidades</h1>
       <p class="section-lead">Elige un pack y escríbenos. Confirmaremos disponibilidad, pago y números directamente contigo.</p>
-      <div class="packs">
-        {packs.map((pack) => (
-          <article class:list={["pack", { featured: pack.featured }] }>
-            {pack.featured && <span class="badge">RECOMENDADO</span>}
-            <div class="pack-image"><img src={pack.image} alt={`Pack de ${pack.quantity} tickets Nuité`} /></div>
-            <div class="pack-copy">
-              <p><strong>{pack.quantity}</strong> ticket{pack.quantity === 1 ? "" : "s"}</p>
-              <b>{pack.price}</b>
-              <small>{pack.quantity} oportunidad{pack.quantity === 1 ? "" : "es"} de ganar</small>
-              <a href={pack.link} target="_blank" rel="noreferrer">Solicitar por WhatsApp</a>
-            </div>
-          </article>
-        ))}
+      <div class="pack-carousel">
+        <div id="ticketPacks" class="packs">
+          {packs.map((pack) => (
+            <article class:list={["pack", { featured: pack.featured }] }>
+              {pack.featured && <span class="badge">RECOMENDADO</span>}
+              <div class="pack-image"><img src={pack.image} alt={`Pack de ${pack.quantity} tickets Nuité`} /></div>
+              <div class="pack-copy">
+                <p><strong>{pack.quantity}</strong> ticket{pack.quantity === 1 ? "" : "s"}</p>
+                <b>{pack.price}</b>
+                <small>{pack.quantity} oportunidad{pack.quantity === 1 ? "" : "es"} de ganar</small>
+                <a href={pack.link} target="_blank" rel="noreferrer">Solicitar por WhatsApp</a>
+              </div>
+            </article>
+          ))}
+        </div>
+        <div class="pack-controls" aria-label="Navegar entre los packs de tickets">
+          <button type="button" data-pack-prev aria-label="Ver pack anterior">←</button>
+          <span>Desliza o usa las flechas</span>
+          <button type="button" data-pack-next aria-label="Ver pack siguiente">→</button>
+        </div>
       </div>
       <div class="ticket-notice">
         <strong>Importante</strong>
@@ -79,6 +86,7 @@ const packs = [
   h2 { margin:0; font-family:Georgia,serif; font-size:clamp(37px,5vw,58px); letter-spacing:-.03em; }
   .section-lead { max-width:680px; margin:16px auto 38px; }
   .packs { display:grid; grid-template-columns:repeat(3,1fr); gap:17px; text-align:left; }
+  .pack-controls { display:none; }
   .pack { position:relative; padding:11px; border:1px solid rgba(232,195,106,.28); border-radius:15px; background:linear-gradient(155deg,#17140f,#090909); }
   .pack.featured { border-color:var(--raffle-gold); box-shadow:0 20px 65px rgba(190,139,39,.13); }
   .badge { position:absolute; z-index:2; top:-12px; left:50%; transform:translateX(-50%); padding:6px 13px; border-radius:999px; background:var(--raffle-gold); color:#100a02; font-size:9px; font-weight:1000; }
@@ -94,6 +102,7 @@ const packs = [
     .raffle-wrap{width:min(100% - 24px,560px)}
     .ticket-section{padding:42px 12px 48px}.ticket-section h1{font-size:38px}.section-lead{margin:12px auto 22px;font-size:13px}
     .packs{display:flex;max-width:none;margin:0 -12px;padding:10px 12px 14px;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}.packs::-webkit-scrollbar{display:none}.pack{flex:0 0 82%;scroll-snap-align:center}
+    .pack-controls{display:flex;align-items:center;justify-content:center;gap:12px;margin:1px 0 4px}.pack-controls button{width:42px;height:42px;border:1px solid rgba(232,195,106,.55);border-radius:50%;background:#11100d;color:var(--raffle-gold);font-size:21px;font-weight:900;cursor:pointer}.pack-controls button:active{transform:scale(.95)}.pack-controls span{color:#918a7f;font-size:11px}
     .pack-copy{padding:10px 5px 4px}.pack-copy b{font-size:29px}.pack-copy a{min-height:43px;margin-top:11px}
     .ticket-notice{margin-top:18px;padding:13px 15px}.ticket-notice p{font-size:12px}
     .steps,.trust-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:20px}.steps article,.trust-grid article{padding:14px}.steps h3{margin:12px 0 6px;font-size:14px}.steps p,.trust-grid p{font-size:11px;line-height:1.4}
@@ -101,3 +110,18 @@ const packs = [
   }
   @media(max-width:350px){.ticket-section h1{font-size:36px}}
 </style>
+
+<script is:inline>
+  document.addEventListener("DOMContentLoaded", () => {
+    const packs = document.querySelector("#ticketPacks");
+    const move = (direction) => {
+      const card = packs?.querySelector(".pack");
+      if (!packs || !card) return;
+      const gap = Number.parseFloat(getComputedStyle(packs).gap) || 0;
+      packs.scrollBy({ left: direction * (card.getBoundingClientRect().width + gap), behavior: "smooth" });
+    };
+
+    document.querySelector("[data-pack-prev]")?.addEventListener("click", () => move(-1));
+    document.querySelector("[data-pack-next]")?.addEventListener("click", () => move(1));
+  });
+</script>
