@@ -1,0 +1,155 @@
+---
+import { FULFILLMENT_STATUS_LABELS, PAYMENT_STATUS_LABELS, type FulfillmentStatus } from "../../data/orderStatus";
+import Layout from "../../layouts/Layout.astro";
+import { adminIsConfigured, isAdminAuthorized } from "../../lib/server/admin";
+import { getServerConfig } from "../../lib/server/flow";
+
+export const prerender = false;
+
+const configured = adminIsConfigured();
+const authorized = isAdminAuthorized(Astro.request);
+if (!authorized) {
+  Astro.response.status = configured ? 401 : 503;
+  if (configured) Astro.response.headers.set("WWW-Authenticate", 'Basic realm="Nuite Gestion", charset="UTF-8"');
+}
+
+const requestedStatus = Astro.url.searchParams.get("estado") || "";
+const updatedOrder = Astro.url.searchParams.get("actualizada");
+const updateError = Astro.url.searchParams.get("error");
+let orders: any[] = [];
+let loadError = "";
+
+if (authorized) {
+  try {
+    const config = getServerConfig();
+    let query = config.supabase
+      .from("store_orders")
+      .select("id,commerce_order,customer_email,customer_name,customer_phone,status,fulfillment_status,total_clp,delivery_method,shipping_carrier,shipping_region,shipping_commune,shipping_address,shipping_address_number,shipping_address_extra,shipping_notes,paid_at,created_at,updated_at,store_order_items(product_name,product_brand,quantity,unit_price_clp,subtotal_clp)")
+      .order("created_at", { ascending: false })
+      .limit(100);
+
+    if (requestedStatus && requestedStatus in FULFILLMENT_STATUS_LABELS) {
+      query = query.eq("fulfillment_status", requestedStatus);
+    }
+
+    const result = await query;
+    if (result.error) throw result.error;
+    orders = result.data || [];
+  } catch (error) {
+    console.error(error);
+    loadError = "No fue posible cargar los pedidos.";
+  }
+}
+
+const money = (value: number) => new Intl.NumberFormat("es-CL", {
+  style: "currency", currency: "CLP", maximumFractionDigits: 0,
+}).format(value || 0);
+const dateTime = (value: string) => new Intl.DateTimeFormat("es-CL", {
+  dateStyle: "short", timeStyle: "short", timeZone: "America/Santiago",
+}).format(new Date(value));
+const carrierNames: Record<string, string> = { starken: "Starken", chilexpress: "Chilexpress", bluex: "Blue Express" };
+---
+
+<Layout title="Gestión de pedidos | Nuité Perfumes">
+  <main class="orders-page">
+    {!authorized ? (
+      <section class="access-card">
+        <p class="kicker">ACCESO PRIVADO</p>
+        <h1>{configured ? "Credenciales requeridas" : "Acceso aún no configurado"}</h1>
+        <p>{configured
+          ? "Ingresa el usuario y la contraseña administrativa para revisar los pedidos."
+          : "Agrega ADMIN_USER y ADMIN_PASSWORD en las variables privadas del proyecto."}</p>
+      </section>
+    ) : (
+      <div class="orders-wrap">
+        <header class="orders-head">
+          <div>
+            <p class="kicker">GESTIÓN PRIVADA</p>
+            <h1>Pedidos</h1>
+            <p>Pagos, entregas y stock en un solo lugar.</p>
+          </div>
+          <a href="/perfumes">Ver tienda</a>
+        </header>
+
+        <nav class="filters" aria-label="Filtrar pedidos">
+          <a class:list={{ active: !requestedStatus }} href="/gestion/pedidos">Todos</a>
+          {Object.entries(FULFILLMENT_STATUS_LABELS).map(([value, label]) => (
+            <a class:list={{ active: requestedStatus === value }} href={`/gestion/pedidos?estado=${value}`}>{label}</a>
+          ))}
+        </nav>
+
+        {updatedOrder && <p class="notice success">Pedido {updatedOrder} actualizado.</p>}
+        {updateError && <p class="notice error">No se pudo actualizar: {updateError}</p>}
+        {loadError && <p class="notice error">{loadError}</p>}
+
+        <section class="orders-list">
+          {orders.length === 0 ? <div class="empty">No hay pedidos con este estado.</div> : orders.map((order: any) => {
+            const delivery = order.delivery_method === "shipping"
+              ? `${carrierNames[order.shipping_carrier] || "Envío"} · ${order.shipping_commune || "sin comuna"}`
+              : "Retiro coordinado en Río Bueno";
+            const availableStatuses = Object.entries(FULFILLMENT_STATUS_LABELS).filter(([value]) => {
+              if (order.status !== "paid") return value === order.fulfillment_status;
+              if (order.fulfillment_status === "cancelled") return value === "cancelled";
+              if (order.delivery_method === "pickup") return value !== "shipped";
+              return value !== "ready_pickup";
+            });
+
+            return (
+              <article class="order-card">
+                <div class="order-top">
+                  <div>
+                    <span class="order-code">{order.id.slice(0, 8).toUpperCase()}</span>
+                    <h2>{order.customer_name || order.customer_email}</h2>
+                    <p>{dateTime(order.created_at)}</p>
+                  </div>
+                  <strong>{money(order.total_clp)}</strong>
+                </div>
+
+                <div class="badges">
+                  <span class:list={["badge", `payment-${order.status}`]}>{PAYMENT_STATUS_LABELS[order.status] || order.status}</span>
+                  <span class:list={["badge", `fulfillment-${order.fulfillment_status}`]}>{FULFILLMENT_STATUS_LABELS[order.fulfillment_status as FulfillmentStatus] || order.fulfillment_status}</span>
+                </div>
+
+                <div class="order-grid">
+                  <div>
+                    <small>CONTACTO</small>
+                    <a href={`mailto:${order.customer_email}`}>{order.customer_email}</a>
+                    <a href={`https://wa.me/${String(order.customer_phone || "").replace(/\D/g, "")}`} target="_blank" rel="noreferrer">{order.customer_phone || "Sin teléfono"}</a>
+                  </div>
+                  <div>
+                    <small>ENTREGA</small>
+                    <b>{delivery}</b>
+                    {order.delivery_method === "shipping" && <span>{order.shipping_address} {order.shipping_address_number}{order.shipping_address_extra ? `, ${order.shipping_address_extra}` : ""}</span>}
+                  </div>
+                </div>
+
+                <ul class="items">
+                  {(order.store_order_items || []).map((item: any) => (
+                    <li><span><b>{item.quantity}×</b> {item.product_name} <small>{item.product_brand}</small></span><strong>{money(item.subtotal_clp)}</strong></li>
+                  ))}
+                </ul>
+
+                {order.shipping_notes && <p class="notes"><b>Indicaciones:</b> {order.shipping_notes}</p>}
+
+                <form class="status-form" action={`/api/admin/orders/${order.id}`} method="post">
+                  <label for={`status-${order.id}`}>Estado del pedido</label>
+                  <select id={`status-${order.id}`} name="fulfillmentStatus">
+                    {availableStatuses.map(([value, label]) => <option value={value} selected={order.fulfillment_status === value}>{label}</option>)}
+                  </select>
+                  <button type="submit" disabled={order.status !== "paid" || order.fulfillment_status === "cancelled"}>Guardar estado</button>
+                </form>
+                {order.status !== "paid" && <p class="status-help">El estado de entrega se habilita cuando Flow confirma el pago.</p>}
+                {order.fulfillment_status === "cancelled" && <p class="status-help">El pedido está cerrado y su stock ya fue restaurado.</p>}
+              </article>
+            );
+          })}
+        </section>
+      </div>
+    )}
+  </main>
+</Layout>
+
+<style>
+  .orders-page{min-height:100vh;padding:48px 18px 80px;background:radial-gradient(circle at 80% 0,rgba(212,175,55,.1),transparent 34%),#050505;color:#eee4ce}.orders-wrap{width:min(1100px,100%);margin:auto}.orders-head{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:24px}.orders-head h1,.access-card h1{margin:5px 0;font-size:clamp(34px,5vw,54px)}.orders-head p{margin:0;color:#958b78}.orders-head>a{padding:11px 16px;border:1px solid rgba(212,175,55,.3);border-radius:11px;color:#e9c760;font-weight:900}.kicker{margin:0;color:#e9c760;font-size:10px;font-weight:1000;letter-spacing:.13em}.filters{display:flex;gap:8px;overflow:auto;padding-bottom:8px}.filters a{flex:0 0 auto;padding:8px 12px;border:1px solid #29251c;border-radius:999px;color:#938a79;font-size:11px;font-weight:900}.filters a.active{border-color:#d4af37;background:rgba(212,175,55,.12);color:#f1d477}.notice{padding:12px 14px;border-radius:10px;font-size:12px}.notice.success{background:#0c2b1e;color:#8be0b5}.notice.error{background:#351516;color:#ff9b9b}.orders-list{display:grid;gap:14px;margin-top:18px}.order-card{padding:20px;border:1px solid rgba(212,175,55,.18);border-radius:18px;background:#0d0c09}.order-top{display:flex;justify-content:space-between;gap:16px}.order-code{color:#e9c760;font-size:10px;font-weight:1000;letter-spacing:.1em}.order-top h2{margin:4px 0;font-size:21px}.order-top p{margin:0;color:#827968;font-size:11px}.order-top>strong{color:#f0d26f;font-size:22px}.badges{display:flex;gap:7px;flex-wrap:wrap;margin:15px 0}.badge{padding:6px 9px;border-radius:999px;background:#242018;color:#bdb39f;font-size:10px;font-weight:900}.payment-paid{background:#123326;color:#8fe0b8}.payment-failed,.fulfillment-cancelled{background:#391a1c;color:#ff9c9c}.fulfillment-delivered{background:#173247;color:#9ed4fa}.order-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px;border-radius:12px;background:#080806}.order-grid>div{display:flex;flex-direction:column;gap:4px;min-width:0}.order-grid small{color:#817765;font-size:9px;font-weight:1000;letter-spacing:.09em}.order-grid a,.order-grid b,.order-grid span{overflow-wrap:anywhere;color:#d7cdb9;font-size:12px}.items{margin:14px 0;padding:0;list-style:none}.items li{display:flex;justify-content:space-between;gap:15px;padding:9px 0;border-bottom:1px solid #211e17;color:#d9cfbc;font-size:12px}.items small{margin-left:5px;color:#746d60}.notes{padding:10px 12px;border-left:2px solid #d4af37;background:#090807;color:#9e9482;font-size:11px}.status-form{display:grid;grid-template-columns:auto minmax(150px,1fr) auto;align-items:center;gap:10px;margin-top:15px}.status-form label{font-size:11px;font-weight:900}.status-form select,.status-form button{height:42px;border-radius:10px;font:inherit}.status-form select{padding:0 11px;border:1px solid #3b3425;background:#050505;color:#fff}.status-form button{padding:0 16px;border:0;background:#d4af37;color:#080705;font-weight:1000;cursor:pointer}.status-form button:disabled{opacity:.4;cursor:not-allowed}.status-help{margin:9px 0 0;color:#817765;font-size:10px}.empty,.access-card{padding:35px;border:1px solid rgba(212,175,55,.2);border-radius:18px;background:#0d0c09;color:#9f9583}.access-card{width:min(620px,100%);margin:90px auto;text-align:center}.access-card p{line-height:1.55}
+  @media(max-width:620px){.orders-page{padding:28px 10px 50px}.orders-head{align-items:flex-start}.orders-head>a{padding:9px 11px;font-size:11px}.order-card{padding:14px;border-radius:15px}.order-top h2{font-size:17px}.order-top>strong{font-size:18px}.order-grid{grid-template-columns:1fr}.status-form{grid-template-columns:1fr}.status-form label{margin-bottom:-4px}.status-form button{width:100%}.items li{font-size:11px}.items small{display:block;margin:3px 0 0}.access-card{margin:55px auto;padding:24px 16px}}
+</style>
