@@ -8,47 +8,181 @@ export const prerender = false;
 
 const orderId = Astro.url.searchParams.get("orden");
 let order = null;
+let items = [];
+
 if (orderId) {
   try {
     const config = getServerConfig();
-    const result = await config.supabase
-      .from("store_orders")
-      .select("id,status,fulfillment_status,total_clp,created_at,delivery_method,shipping_payment_mode,shipping_carrier")
-      .eq("id", orderId)
-      .maybeSingle();
-    order = result.data;
+    const [orderResult, itemsResult] = await Promise.all([
+      config.supabase
+        .from("store_orders")
+        .select("id,status,fulfillment_status,total_clp,created_at,paid_at,delivery_method,shipping_carrier,shipping_region,shipping_commune,shipping_tracking_number,shipping_tracking_url")
+        .eq("id", orderId)
+        .maybeSingle(),
+      config.supabase
+        .from("store_order_items")
+        .select("id,product_name,product_brand,quantity,subtotal_clp")
+        .eq("order_id", orderId)
+        .order("product_name"),
+    ]);
+
+    if (orderResult.error) throw orderResult.error;
+    if (itemsResult.error) throw itemsResult.error;
+    order = orderResult.data;
+    items = itemsResult.data || [];
   } catch (error) {
     console.error(error);
   }
 }
+
 const paid = order?.status === "paid";
 const pending = order?.status === "pending";
 const cancelled = order?.fulfillment_status === "cancelled";
+const orderCode = order?.id?.slice(0, 8).toUpperCase() || "";
+const carrierName = order?.shipping_carrier
+  ? SHIPPING_CARRIER_NAMES[order.shipping_carrier] || order.shipping_carrier
+  : "Transportista por confirmar";
+const trackingUrl = typeof order?.shipping_tracking_url === "string" && order.shipping_tracking_url.startsWith("https://")
+  ? order.shipping_tracking_url
+  : "";
+const money = (value) => Number(value || 0).toLocaleString("es-CL", {
+  style: "currency",
+  currency: "CLP",
+  maximumFractionDigits: 0,
+});
+const formattedDate = order?.paid_at || order?.created_at
+  ? new Date(order.paid_at || order.created_at).toLocaleString("es-CL", { dateStyle: "long", timeStyle: "short" })
+  : "";
+
 const deliveryText = order?.delivery_method === "shipping"
-  ? `Envío por pagar${order.shipping_carrier ? ` mediante ${SHIPPING_CARRIER_NAMES[order.shipping_carrier] || order.shipping_carrier}` : ""}. Te contactaremos antes del despacho.`
+  ? `Envío por pagar mediante ${carrierName}${order.shipping_commune ? ` hacia ${order.shipping_commune}` : ""}. El despacho se paga al transportista al recibir.`
   : "Retiro coordinado en Río Bueno. Te escribiremos para acordar el lugar y el horario.";
+const shippingSteps = [
+  { key: "new", label: "Pago confirmado", copy: "Recibimos correctamente tu compra." },
+  { key: "preparing", label: "Preparando pedido", copy: "Estamos preparando y protegiendo tus perfumes." },
+  { key: "shipped", label: "Pedido enviado", copy: "El pedido fue entregado al transportista." },
+  { key: "delivered", label: "Pedido entregado", copy: "La entrega fue completada." },
+];
+const pickupSteps = [
+  { key: "new", label: "Pago confirmado", copy: "Recibimos correctamente tu compra." },
+  { key: "preparing", label: "Preparando pedido", copy: "Estamos preparando tus perfumes." },
+  { key: "ready_pickup", label: "Listo para retiro", copy: "Coordinaremos contigo el lugar y horario." },
+  { key: "delivered", label: "Pedido entregado", copy: "La entrega fue completada." },
+];
+const progressSteps = order?.delivery_method === "shipping" ? shippingSteps : pickupSteps;
+const normalizedStatus = order?.delivery_method === "shipping" && order?.fulfillment_status === "ready_pickup"
+  ? "preparing"
+  : order?.delivery_method === "pickup" && order?.fulfillment_status === "shipped"
+    ? "ready_pickup"
+    : order?.fulfillment_status;
+const foundProgressIndex = progressSteps.findIndex((step) => step.key === normalizedStatus);
+const progressIndex = foundProgressIndex >= 0 ? foundProgressIndex : 0;
+const helpMessage = orderCode
+  ? `Hola Nuité, necesito ayuda con mi pedido ${orderCode}`
+  : "Hola Nuité, necesito ayuda con un pago";
 ---
 
-<Layout title="Estado del pago | Nuité Perfumes">
+<Layout title="Estado del pedido | Nuité Perfumes">
   <Navegacion />
   <main class="payment-page">
-    <section class:list={["payment-card", { paid: paid && !cancelled, pending, cancelled }] }>
-      <span class="status-icon" aria-hidden="true">{cancelled ? "!" : paid ? "✓" : pending ? "…" : "!"}</span>
-      <p class="kicker">ESTADO DE TU ORDEN</p>
-      <h1>{cancelled ? "Pedido cancelado" : paid ? "Pago confirmado" : pending ? "Pago en verificación" : "No pudimos confirmar el pago"}</h1>
-      <p>{cancelled
-        ? "El pago fue registrado, pero el pedido fue cancelado. Contáctanos si necesitas revisar el reembolso."
-        : paid
-        ? "Tu compra fue registrada correctamente. Te contactaremos con la información de entrega."
-        : pending
-          ? "Algunos medios de pago demoran unos minutos. Puedes volver a consultar esta página."
-          : "Si realizaste el pago, contáctanos por WhatsApp indicando el correo usado en la compra."}</p>
-      {paid && !cancelled && order && <p class="delivery-result">{deliveryText}</p>}
-      {order && <small>Orden {order.id.slice(0, 8).toUpperCase()}</small>}
-      <div class="payment-actions">
-        <a href="/perfumes">Volver al catálogo</a>
-        {(!paid || cancelled) && <a class="quiet" href="https://wa.me/56935226409?text=Hola%20Nuit%C3%A9%2C%20necesito%20ayuda%20con%20un%20pago" target="_blank" rel="noreferrer">Pedir ayuda</a>}
-      </div>
+    <section class:list={["payment-shell", { paid: paid && !cancelled, pending, cancelled }] }>
+      <header class="payment-header">
+        <span class="status-icon" aria-hidden="true">{cancelled ? "!" : paid ? "✓" : pending ? "…" : "!"}</span>
+        <div>
+          <p class="kicker">ESTADO DE TU PEDIDO</p>
+          <h1>{cancelled ? "Pedido cancelado" : paid ? "Pago confirmado" : pending ? "Pago en verificación" : "No pudimos confirmar el pago"}</h1>
+          <p class="status-copy">{cancelled
+            ? "El pago fue registrado, pero el pedido fue cancelado. Contáctanos si necesitas revisar el reembolso."
+            : paid
+              ? "Tu compra fue registrada correctamente. Aquí podrás consultar su preparación y seguimiento."
+              : pending
+                ? "Algunos medios de pago demoran unos minutos. Puedes actualizar esta página para consultar nuevamente."
+                : "Si realizaste el pago, contáctanos indicando el correo usado en la compra."}</p>
+        </div>
+        {order && <div class="order-reference"><small>ORDEN</small><strong>{orderCode}</strong><span>{formattedDate}</span></div>}
+      </header>
+
+      {order ? (
+        <div class="payment-content">
+          <div class="payment-main">
+            {paid && !cancelled && (
+              <section class="progress-card" aria-labelledby="progressTitle">
+                <div class="section-heading">
+                  <p>SEGUIMIENTO</p>
+                  <h2 id="progressTitle">Avance de tu pedido</h2>
+                </div>
+                <ol class="progress-list">
+                  {progressSteps.map((step, index) => (
+                    <li class:list={{ done: index < progressIndex, current: index === progressIndex }}>
+                      <span class="progress-dot">{index < progressIndex ? "✓" : index + 1}</span>
+                      <div><strong>{step.label}</strong><small>{step.copy}</small></div>
+                    </li>
+                  ))}
+                </ol>
+              </section>
+            )}
+
+            <section class="products-card" aria-labelledby="productsTitle">
+              <div class="section-heading">
+                <p>DETALLE DE COMPRA</p>
+                <h2 id="productsTitle">Tus perfumes</h2>
+              </div>
+              <ul class="product-list">
+                {items.map((item) => (
+                  <li>
+                    <span class="product-quantity">{item.quantity}×</span>
+                    <div><strong>{item.product_name}</strong><small>{item.product_brand || "Nuité Perfumes"}</small></div>
+                    <b>{money(item.subtotal_clp)}</b>
+                  </li>
+                ))}
+              </ul>
+              <div class="products-total"><span>Total pagado en Flow</span><strong>{money(order.total_clp)}</strong></div>
+            </section>
+          </div>
+
+          <aside class="delivery-card">
+            <div class="section-heading">
+              <p>ENTREGA</p>
+              <h2>{order.delivery_method === "shipping" ? "Envío a domicilio" : "Retiro coordinado"}</h2>
+            </div>
+            <p class="delivery-result">{deliveryText}</p>
+
+            {order.delivery_method === "shipping" && (
+              <div class="carrier-box">
+                <small>TRANSPORTISTA</small>
+                <strong>{carrierName}</strong>
+                {order.shipping_region && <span>{[order.shipping_commune, order.shipping_region].filter(Boolean).join(", ")}</span>}
+              </div>
+            )}
+
+            {order.delivery_method === "shipping" && order.shipping_tracking_number && (
+              <div class="tracking-box">
+                <small>NÚMERO DE SEGUIMIENTO</small>
+                <strong>{order.shipping_tracking_number}</strong>
+                {trackingUrl && <a href={trackingUrl} target="_blank" rel="noreferrer">Revisar envío ↗</a>}
+              </div>
+            )}
+
+            {order.delivery_method === "shipping" && paid && !cancelled && !order.shipping_tracking_number && (
+              <p class="tracking-pending">El seguimiento aparecerá aquí cuando entreguemos el pedido al transportista.</p>
+            )}
+
+            <div class="payment-actions">
+              <button type="button" onclick="window.location.reload()">Actualizar estado</button>
+              <a class="quiet" href={`https://wa.me/56935226409?text=${encodeURIComponent(helpMessage)}`} target="_blank" rel="noreferrer">Consultar por WhatsApp</a>
+              <a class="catalog-link" href="/perfumes">Volver al catálogo</a>
+            </div>
+          </aside>
+        </div>
+      ) : (
+        <div class="missing-order">
+          <p>No encontramos una orden asociada a este enlace.</p>
+          <div class="payment-actions centered">
+            <a class="quiet" href={`https://wa.me/56935226409?text=${encodeURIComponent(helpMessage)}`} target="_blank" rel="noreferrer">Pedir ayuda</a>
+            <a class="catalog-link" href="/perfumes">Volver al catálogo</a>
+          </div>
+        </div>
+      )}
     </section>
   </main>
 </Layout>
@@ -56,14 +190,12 @@ const deliveryText = order?.delivery_method === "shipping"
 {paid && <script>localStorage.removeItem("nuite-cart-v1");</script>}
 
 <style>
-  .payment-page { min-height: 70vh; display: grid; place-items: center; padding: 60px 20px; background: radial-gradient(circle,rgba(212,175,55,.1),transparent 45%),#050505; color: var(--champagne); }
-  .payment-card { width: min(620px,100%); padding: 45px; border: 1px solid rgba(255,110,110,.25); border-radius: 24px; background: #0d0c09; text-align: center; }
-  .payment-card.paid { border-color: rgba(94,214,157,.35); }.payment-card.pending{border-color:rgba(212,175,55,.3)}
-  .payment-card.cancelled{border-color:rgba(255,110,110,.35)}
-  .status-icon { width: 68px; height: 68px; margin: 0 auto 18px; display: grid; place-items: center; border-radius: 50%; background: rgba(212,175,55,.1); color: var(--gold2); font-size: 34px; }
-  .kicker { color: var(--gold2); font-size: 10px; font-weight: 900; }
-  h1 { margin: 10px 0 15px; font-size: clamp(31px,5vw,48px); } p { color:#aaa18e;line-height:1.6} small{color:#756d5e}
-  .delivery-result{margin:18px auto 0;padding:13px 16px;border:1px solid rgba(212,175,55,.18);border-radius:12px;background:rgba(212,175,55,.05);color:#d5cab4;font-size:13px}
-  .payment-actions { display:flex;justify-content:center;gap:10px;margin-top:28px;flex-wrap:wrap}.payment-actions a{padding:13px 19px;border-radius:11px;background:var(--gold);color:#050505;font-weight:900}.payment-actions .quiet{border:1px solid rgba(212,175,55,.25);background:#080806;color:var(--gold2)}
-  @media(max-width:520px){.payment-page{padding:34px 12px}.payment-card{padding:25px 17px;border-radius:18px}.status-icon{width:54px;height:54px;margin-bottom:14px;font-size:27px}h1{font-size:32px}.payment-card p{font-size:13px;line-height:1.5}.payment-actions{margin-top:20px}.payment-actions a{width:100%;min-height:45px;padding:0 14px;display:flex;align-items:center;justify-content:center}}
+  .payment-page{min-height:74vh;padding:52px 20px 82px;background:radial-gradient(circle at 20% 0,rgba(212,175,55,.1),transparent 34%),#050505;color:var(--champagne)}
+  .payment-shell{width:min(1080px,100%);margin:auto;border:1px solid rgba(255,110,110,.25);border-radius:26px;background:linear-gradient(145deg,rgba(212,175,55,.035),transparent 38%),#0d0c09;overflow:hidden}.payment-shell.paid{border-color:rgba(94,214,157,.3)}.payment-shell.pending{border-color:rgba(212,175,55,.3)}.payment-shell.cancelled{border-color:rgba(255,110,110,.35)}
+  .payment-header{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:18px;align-items:center;padding:30px;border-bottom:1px solid rgba(212,175,55,.13)}.status-icon{width:62px;height:62px;display:grid;place-items:center;border-radius:50%;background:rgba(212,175,55,.1);color:var(--gold2);font-size:31px;font-weight:900}.paid .status-icon{background:rgba(34,197,94,.1);color:#9cffb7}.cancelled .status-icon{background:rgba(239,68,68,.1);color:#ffabab}.kicker,.section-heading p{margin:0;color:var(--gold2);font-size:9px;font-weight:900;letter-spacing:.13em}.payment-header h1{margin:5px 0 7px;font-size:clamp(27px,4vw,42px);line-height:1.05}.status-copy{max-width:620px;margin:0;color:#aaa18e;font-size:13px;line-height:1.5}.order-reference{display:flex;flex-direction:column;align-items:flex-end;gap:3px;text-align:right}.order-reference small{color:#7d7463;font-size:8px;font-weight:900;letter-spacing:.13em}.order-reference strong{color:#ffe29a;font-size:17px;letter-spacing:.08em}.order-reference span{max-width:160px;color:#817868;font-size:9px;line-height:1.4}
+  .payment-content{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.85fr);gap:18px;padding:20px}.payment-main{display:grid;gap:18px}.progress-card,.products-card,.delivery-card{padding:22px;border:1px solid rgba(212,175,55,.13);border-radius:19px;background:rgba(0,0,0,.25)}.section-heading h2{margin:5px 0 0;font-size:20px}.progress-list{display:grid;grid-template-columns:repeat(4,1fr);margin:24px 0 0;padding:0;list-style:none}.progress-list li{position:relative;display:grid;justify-items:center;gap:9px;padding:0 7px;text-align:center}.progress-list li:not(:last-child)::after{content:"";position:absolute;z-index:0;top:15px;left:calc(50% + 18px);width:calc(100% - 36px);height:2px;background:#342f26}.progress-list li.done:not(:last-child)::after{background:#6aa87d}.progress-dot{position:relative;z-index:1;width:31px;height:31px;display:grid;place-items:center;border:2px solid #494236;border-radius:50%;background:#0a0907;color:#776f61;font-size:11px;font-weight:900}.progress-list li.done .progress-dot{border-color:#6aa87d;background:#173321;color:#a9f0bd}.progress-list li.current .progress-dot{border-color:var(--gold2);background:#392c0b;color:#ffe29a}.progress-list strong,.progress-list small{display:block}.progress-list strong{color:#dfd5c1;font-size:11px}.progress-list small{margin-top:4px;color:#786f60;font-size:9px;line-height:1.35}.progress-list li.current strong{color:#ffe8a9}
+  .product-list{display:grid;gap:0;margin:14px 0 0;padding:0;list-style:none}.product-list li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid rgba(212,175,55,.1)}.product-quantity{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:rgba(212,175,55,.08);color:var(--gold2);font-size:11px;font-weight:900}.product-list strong,.product-list small{display:block}.product-list strong{color:#eee3cc;font-size:13px}.product-list small{margin-top:4px;color:#807766;font-size:10px}.product-list b{color:#ddc576;font-size:13px;white-space:nowrap}.products-total{display:flex;align-items:center;justify-content:space-between;gap:15px;padding-top:16px}.products-total span{color:#928977;font-size:11px}.products-total strong{color:var(--gold2);font-size:21px}
+  .delivery-card{align-self:start}.delivery-result{margin:15px 0;padding:13px;border-left:3px solid var(--gold2);border-radius:10px;background:rgba(212,175,55,.055);color:#b2a995;font-size:11px;line-height:1.5}.carrier-box,.tracking-box{display:flex;flex-direction:column;gap:5px;margin-top:11px;padding:13px;border:1px solid rgba(212,175,55,.12);border-radius:13px;background:#070706}.carrier-box small,.tracking-box small{color:#7e7564;font-size:8px;font-weight:900;letter-spacing:.1em}.carrier-box strong,.tracking-box strong{color:#eee2c8;font-size:13px;overflow-wrap:anywhere}.carrier-box span{color:#867d6d;font-size:10px}.tracking-box{border-color:rgba(34,197,94,.19);background:rgba(34,197,94,.045)}.tracking-box a{width:fit-content;color:#94dda8;font-size:10px;font-weight:900;text-decoration:underline}.tracking-pending{margin:11px 0 0;padding:12px;border-radius:11px;background:rgba(255,255,255,.035);color:#7e7668;font-size:10px;line-height:1.45}.payment-actions{display:grid;gap:8px;margin-top:17px}.payment-actions button,.payment-actions a{min-height:44px;display:flex;align-items:center;justify-content:center;padding:0 13px;border-radius:11px;font:inherit;font-size:11px;font-weight:900;text-align:center;cursor:pointer}.payment-actions button{border:0;background:linear-gradient(135deg,var(--gold2),var(--gold),#9c741b);color:#080603}.payment-actions .quiet{border:1px solid rgba(37,211,102,.25);background:rgba(37,211,102,.07);color:#9ce2b0}.payment-actions .catalog-link{color:#9b927f}.missing-order{padding:40px 25px;text-align:center}.missing-order>p{color:#9d9482}.payment-actions.centered{max-width:360px;margin:20px auto 0}
+  @media(max-width:800px){.payment-content{grid-template-columns:1fr}.delivery-card{order:-1}.payment-header{grid-template-columns:auto 1fr}.order-reference{grid-column:1/-1;align-items:flex-start;padding-left:80px;text-align:left}}
+  @media(max-width:560px){.payment-page{padding:26px 10px 45px}.payment-shell{border-radius:19px}.payment-header{grid-template-columns:auto minmax(0,1fr);gap:12px;padding:18px 15px}.status-icon{width:46px;height:46px;font-size:23px}.payment-header h1{font-size:25px}.status-copy{font-size:11px;line-height:1.45}.order-reference{grid-column:1/-1;display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:8px;padding:10px 0 0;border-top:1px solid rgba(212,175,55,.1);text-align:left}.order-reference span{max-width:none;text-align:right}.payment-content{gap:11px;padding:11px}.payment-main{gap:11px}.progress-card,.products-card,.delivery-card{padding:15px;border-radius:15px}.section-heading h2{font-size:17px}.progress-list{grid-template-columns:1fr;margin-top:15px}.progress-list li{grid-template-columns:29px 1fr;justify-items:start;gap:10px;padding:7px 0;text-align:left}.progress-list li:not(:last-child)::after{top:36px;bottom:-7px;left:14px;width:2px;height:auto}.progress-dot{width:29px;height:29px}.progress-list small{margin-top:2px}.product-list li{gap:9px;padding:11px 0}.product-quantity{width:30px;height:30px}.product-list strong{font-size:11px}.product-list b{font-size:11px}.products-total strong{font-size:18px}}
 </style>
