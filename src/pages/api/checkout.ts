@@ -91,19 +91,37 @@ export const POST: APIRoute = async ({ request }) => {
     const total = Number(order.created_total_clp);
     const orderId = order.created_order_id;
 
-    const flow = await createFlowPayment({
-      apiKey: config.apiKey,
-      commerceOrder,
-      subject: `Compra Nuité Perfumes (${items.length} producto${items.length === 1 ? "" : "s"} · ${method === "pickup" ? "retiro" : `envío por pagar vía ${SHIPPING_CARRIER_NAMES[delivery.carrier]}`})`,
-      currency: "CLP",
-      amount: total,
-      email,
-      paymentMethod: 9,
-      urlConfirmation: `${config.siteUrl}/api/flow/confirmation`,
-      urlReturn: `${config.siteUrl}/api/flow/return`,
-      optional: JSON.stringify({ orderId }),
-      timeout: 1800,
-    });
+    let flow;
+    try {
+      flow = await createFlowPayment({
+        apiKey: config.apiKey,
+        commerceOrder,
+        subject: `Compra Nuité Perfumes (${items.length} producto${items.length === 1 ? "" : "s"} · ${method === "pickup" ? "retiro" : `envío por pagar vía ${SHIPPING_CARRIER_NAMES[delivery.carrier]}`})`,
+        currency: "CLP",
+        amount: total,
+        email,
+        paymentMethod: 9,
+        urlConfirmation: `${config.siteUrl}/api/flow/confirmation`,
+        urlReturn: `${config.siteUrl}/api/flow/return`,
+        optional: JSON.stringify({ orderId }),
+        timeout: 1800,
+      });
+    } catch (flowError) {
+      const flowMessage = flowError instanceof Error ? flowError.message : "Flow no pudo crear el pago.";
+      const { error: releaseError } = await config.supabase.rpc("release_store_order", {
+        p_order_id: orderId,
+        p_flow_status: 0,
+        p_provider_payload: {
+          stage: "payment_create",
+          error: flowMessage.slice(0, 500),
+        },
+      });
+
+      if (releaseError) {
+        console.error("No se pudo liberar la reserva después del error de Flow.", releaseError);
+      }
+      throw flowError;
+    }
 
     await config.supabase.from("store_orders").update({
       flow_order: flow.flowOrder,
