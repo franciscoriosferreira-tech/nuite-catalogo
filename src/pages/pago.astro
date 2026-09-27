@@ -51,7 +51,11 @@ const money = (value) => Number(value || 0).toLocaleString("es-CL", {
   maximumFractionDigits: 0,
 });
 const formattedDate = order?.paid_at || order?.created_at
-  ? new Date(order.paid_at || order.created_at).toLocaleString("es-CL", { dateStyle: "long", timeStyle: "short" })
+  ? new Date(order.paid_at || order.created_at).toLocaleString("es-CL", {
+      dateStyle: "long",
+      timeStyle: "short",
+      timeZone: "America/Santiago",
+    })
   : "";
 
 const deliveryText = order?.delivery_method === "shipping"
