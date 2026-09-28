@@ -1,0 +1,86 @@
+---
+import Layout from "../layouts/Layout.astro";
+import Navegacion from "../components/Navegacion.astro";
+---
+
+<Layout title="Seguimiento de pedidos | Nuité Perfumes">
+  <Navegacion />
+  <main class="tracking-page">
+    <section class="tracking-shell">
+      <div class="tracking-copy">
+        <p class="kicker">SEGUIMIENTO DE COMPRA</p>
+        <h1>Consulta tu pedido</h1>
+        <p>Ingresa el número de orden y el mismo correo que utilizaste al pagar. Podrás revisar la preparación, la entrega y el seguimiento del transportista.</p>
+
+        <div class="privacy-note">
+          <span aria-hidden="true">✓</span>
+          <div><strong>Consulta protegida</strong><small>Necesitamos ambos datos para mostrar la información del pedido.</small></div>
+        </div>
+      </div>
+
+      <form id="trackingForm" class="tracking-form">
+        <label>
+          <span>Número de orden</span>
+          <input id="orderCode" name="orderCode" type="text" inputmode="text" autocomplete="off" maxlength="8" placeholder="Ejemplo: 0D4A19CD" required />
+          <small>Son los 8 caracteres que aparecen junto a “Orden”.</small>
+        </label>
+
+        <label>
+          <span>Correo de la compra</span>
+          <input id="orderEmail" name="email" type="email" autocomplete="email" maxlength="160" placeholder="tu@email.cl" required />
+        </label>
+
+        <button id="trackingButton" type="submit">Consultar estado</button>
+        <p id="trackingError" class="tracking-error" role="alert" aria-live="polite"></p>
+        <a class="help-link" href="https://wa.me/56935226409?text=Hola%20Nuit%C3%A9%2C%20necesito%20ayuda%20para%20encontrar%20mi%20pedido" target="_blank" rel="noreferrer">¿No encuentras tu número? Escríbenos por WhatsApp</a>
+      </form>
+    </section>
+  </main>
+</Layout>
+
+<script>
+  const form = document.querySelector("#trackingForm");
+  const orderCode = document.querySelector("#orderCode");
+  const orderEmail = document.querySelector("#orderEmail");
+  const button = document.querySelector("#trackingButton");
+  const errorBox = document.querySelector("#trackingError");
+
+  orderCode?.addEventListener("input", () => {
+    orderCode.value = orderCode.value.replace(/[^0-9a-f]/gi, "").toUpperCase().slice(0, 8);
+  });
+
+  form?.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorBox.textContent = "";
+    button.disabled = true;
+    button.textContent = "Buscando pedido...";
+
+    try {
+      const response = await fetch("/api/seguimiento", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderCode: orderCode.value.trim(),
+          email: orderEmail.value.trim(),
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok || !result.redirectUrl) throw new Error(result.error || "No pudimos encontrar el pedido.");
+      window.location.assign(result.redirectUrl);
+    } catch (error) {
+      errorBox.textContent = error instanceof Error ? error.message : "No pudimos encontrar el pedido.";
+      button.disabled = false;
+      button.textContent = "Consultar estado";
+    }
+  });
+</script>
+
+<style>
+  .tracking-page{min-height:72vh;display:grid;place-items:center;padding:58px 20px 85px;background:radial-gradient(circle at 20% 0,rgba(212,175,55,.12),transparent 35%),#050505;color:var(--champagne)}
+  .tracking-shell{width:min(920px,100%);display:grid;grid-template-columns:1fr 420px;gap:42px;align-items:center;padding:38px;border:1px solid rgba(212,175,55,.22);border-radius:25px;background:linear-gradient(145deg,rgba(212,175,55,.05),transparent 40%),#0d0c09;box-shadow:0 25px 70px rgba(0,0,0,.38)}
+  .kicker{margin:0;color:var(--gold2);font-size:10px;font-weight:900;letter-spacing:.14em}.tracking-copy h1{margin:8px 0 13px;font-size:clamp(34px,5vw,52px);line-height:1.05}.tracking-copy>p:last-of-type{max-width:500px;margin:0;color:#a79e8d;font-size:13px;line-height:1.65}
+  .privacy-note{display:flex;align-items:center;gap:11px;margin-top:23px;padding:13px;border:1px solid rgba(34,197,94,.15);border-radius:13px;background:rgba(34,197,94,.045)}.privacy-note>span{width:30px;height:30px;display:grid;place-items:center;flex:0 0 auto;border-radius:50%;background:rgba(34,197,94,.12);color:#9ee7b3;font-weight:900}.privacy-note strong,.privacy-note small{display:block}.privacy-note strong{color:#d9efdf;font-size:11px}.privacy-note small{margin-top:3px;color:#7e9182;font-size:9px;line-height:1.4}
+  .tracking-form{display:grid;gap:15px;padding:23px;border:1px solid rgba(212,175,55,.16);border-radius:19px;background:#070706}.tracking-form label>span{display:block;margin-bottom:7px;color:#d2c6ad;font-size:11px;font-weight:900}.tracking-form input{width:100%;height:49px;padding:0 13px;border:1px solid rgba(212,175,55,.23);border-radius:11px;background:#020202;color:#fff;font:inherit;font-size:14px;outline:none}.tracking-form input:focus{border-color:var(--gold2);box-shadow:0 0 0 3px rgba(212,175,55,.08)}.tracking-form label>small{display:block;margin-top:6px;color:#746c5e;font-size:9px}.tracking-form button{min-height:49px;border:0;border-radius:11px;background:linear-gradient(135deg,var(--gold2),var(--gold),#9c741b);color:#080603;font:inherit;font-size:12px;font-weight:1000;cursor:pointer}.tracking-form button:disabled{opacity:.6;cursor:wait}.tracking-error{min-height:16px;margin:-4px 0 0;color:#ff9d9d;font-size:10px;line-height:1.4}.help-link{color:#8fcfa1;font-size:10px;text-align:center;text-decoration:underline}
+  @media(max-width:800px){.tracking-shell{grid-template-columns:1fr;gap:24px;max-width:590px}.tracking-copy{text-align:center}.tracking-copy>p:last-of-type{margin-inline:auto}.privacy-note{text-align:left}}
+  @media(max-width:520px){.tracking-page{padding:27px 10px 48px}.tracking-shell{gap:17px;padding:16px;border-radius:18px}.kicker{font-size:8px}.tracking-copy h1{margin:6px 0 9px;font-size:31px}.tracking-copy>p:last-of-type{font-size:11px;line-height:1.5}.privacy-note{margin-top:15px;padding:10px}.tracking-form{gap:12px;padding:15px;border-radius:15px}.tracking-form input{height:45px;font-size:13px}.tracking-form button{min-height:46px}}
+</style>
