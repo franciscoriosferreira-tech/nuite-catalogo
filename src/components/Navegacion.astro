@@ -45,6 +45,13 @@ const rutaActual = Astro.url.pathname;
 
       <a href="/ofertas" aria-current={rutaActual === "/ofertas" ? "page" : undefined}>Ofertas</a>
       <a href="/sorteos" aria-current={rutaActual === "/sorteos" ? "page" : undefined}>Sorteos</a>
+      <a class="tracking-nav" href="/seguimiento" aria-current={rutaActual === "/seguimiento" ? "page" : undefined}>
+        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"></path>
+          <path d="M3.5 7.7 12 12l8.5-4.3M12 12v9"></path>
+        </svg>
+        <span>Seguimiento</span>
+      </a>
       <a href="/contacto" aria-current={rutaActual === "/contacto" ? "page" : undefined}>Contacto</a>
     </nav>
   </div>
@@ -183,6 +190,16 @@ const rutaActual = Astro.url.pathname;
     white-space: nowrap;
   }
 
+  .tracking-nav {
+    gap: 6px;
+  }
+
+  .tracking-nav svg {
+    width: 15px;
+    height: 15px;
+    flex: none;
+  }
+
   .menu > a:hover,
   .menu > a[aria-current="page"] {
     border-bottom-color: var(--gold2);
@@ -296,16 +313,23 @@ const rutaActual = Astro.url.pathname;
 
     .menu {
       width: 100%;
-      min-height: 46px;
-      padding: 0 10px;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 11.5px;
+      min-height: 76px;
+      padding: 5px 8px;
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 2px 5px;
+      font-size: 10.5px;
     }
 
     .menu > a {
-      height: 46px;
+      width: 100%;
+      height: 32px;
+      justify-content: center;
+      border-bottom-width: 1px;
     }
+
+    .tracking-nav { gap: 4px; }
+    .tracking-nav svg { width: 12px; height: 12px; }
 
     .benefit-strip {
       min-height: 33px;
@@ -325,8 +349,8 @@ const rutaActual = Astro.url.pathname;
     }
 
     .menu {
-      gap: 6px;
-      font-size: 10.5px;
+      gap: 2px 4px;
+      font-size: 10px;
     }
   }
 
@@ -341,8 +365,8 @@ const rutaActual = Astro.url.pathname;
     .brand-logo { width: 105px; height: 42px; }
     .header-actions a, .cart-link { min-height: 38px; }
     .cart-link { width: 38px; }
-    .menu { min-height: 40px; font-size: 11px; }
-    .menu > a { height: 40px; }
+    .menu { min-height: 70px; font-size: 10px; }
+    .menu > a { height: 30px; }
     .benefit-strip { min-height: 28px; padding: 5px 0; font-size: 9px; }
   }
 
