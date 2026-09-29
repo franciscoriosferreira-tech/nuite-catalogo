@@ -56,19 +56,24 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const config = getServerConfig();
-    const { data, error } = await config.supabase
+    const findOrders = () => config.supabase
       .from("store_orders")
       .select("id")
       .eq("customer_email", email)
       .order("created_at", { ascending: false })
       .limit(20);
 
+    let { data, error } = await findOrders();
+    if (error) {
+      ({ data, error } = await findOrders());
+    }
+
     if (error) throw error;
     const order = data?.find((candidate) => String(candidate.id).toLowerCase().startsWith(orderCode));
 
     if (!order) {
       return json({
-        error: "No encontramos el pedido. Usa el correo que ingresaste en el checkout antes de abrir Flow; puede ser distinto al correo de tu tarjeta.",
+        error: "No encontramos el pedido. Revisa el número de orden y el correo ingresado para la compra.",
       }, 404);
     }
 

@@ -10,7 +10,7 @@ import Navegacion from "../components/Navegacion.astro";
       <div class="tracking-copy">
         <p class="kicker">SEGUIMIENTO DE COMPRA</p>
         <h1>Consulta tu pedido</h1>
-        <p>Ingresa el número de orden y el correo que escribiste en el checkout, antes de abrir Flow. Puede ser distinto al correo de tu tarjeta o cuenta de Flow.</p>
+        <p>Ingresa el número de orden y el correo registrado para la compra. Podrás revisar la preparación, la entrega y el seguimiento del transportista.</p>
 
         <div class="privacy-note">
           <span aria-hidden="true">✓</span>
@@ -26,7 +26,7 @@ import Navegacion from "../components/Navegacion.astro";
         </label>
 
         <label>
-          <span>Correo ingresado en el checkout</span>
+          <span>Correo ingresado para la compra</span>
           <input id="orderEmail" name="email" type="email" autocomplete="email" maxlength="160" placeholder="tu@email.cl" required />
         </label>
 
@@ -47,6 +47,11 @@ import Navegacion from "../components/Navegacion.astro";
 
   orderCode?.addEventListener("input", () => {
     orderCode.value = orderCode.value.replace(/[^0-9a-f]/gi, "").toUpperCase().slice(0, 8);
+    errorBox.textContent = "";
+  });
+
+  orderEmail?.addEventListener("input", () => {
+    errorBox.textContent = "";
   });
 
   form?.addEventListener("submit", async (event) => {
