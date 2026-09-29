@@ -67,7 +67,9 @@ export const POST: APIRoute = async ({ request }) => {
     const order = data?.find((candidate) => String(candidate.id).toLowerCase().startsWith(orderCode));
 
     if (!order) {
-      return json({ error: "No encontramos un pedido con esos datos. Revisa el correo y el número de orden." }, 404);
+      return json({
+        error: "No encontramos el pedido. Usa el correo que ingresaste en el checkout antes de abrir Flow; puede ser distinto al correo de tu tarjeta.",
+      }, 404);
     }
 
     return json({ redirectUrl: `/pago?orden=${encodeURIComponent(order.id)}` });
