@@ -26,3 +26,28 @@ export const SHIPPING_CARRIERS = [
 export const SHIPPING_CARRIER_NAMES = Object.fromEntries(
   SHIPPING_CARRIERS.map((carrier) => [carrier.id, carrier.name]),
 ) as Record<string, string>;
+
+export const SHIPPING_CARRIER_TRACKING_PAGES = {
+  starken: "https://www.starken.cl/seguimiento",
+  chilexpress: "https://www.chilexpress.cl/Views/ServicioAlCliente/EstadoEnvios.aspx",
+  bluex: "https://www.blue.cl/emprendedores/seguimiento",
+} as const;
+
+export function getShippingTrackingUrl(
+  carrier: string | null | undefined,
+  trackingNumber: string | null | undefined,
+  savedUrl?: string | null,
+) {
+  if (typeof savedUrl === "string" && savedUrl.startsWith("https://")) return savedUrl;
+  if (!carrier || !(carrier in SHIPPING_CARRIER_TRACKING_PAGES)) return "";
+
+  const baseUrl = SHIPPING_CARRIER_TRACKING_PAGES[
+    carrier as keyof typeof SHIPPING_CARRIER_TRACKING_PAGES
+  ];
+
+  if (carrier === "starken" && trackingNumber) {
+    return `${baseUrl}?codigo=${encodeURIComponent(trackingNumber.trim())}`;
+  }
+
+  return baseUrl;
+}
