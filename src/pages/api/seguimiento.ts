@@ -58,10 +58,9 @@ export const POST: APIRoute = async ({ request }) => {
     const config = getServerConfig();
     const findOrders = () => config.supabase
       .from("store_orders")
-      .select("id")
-      .eq("customer_email", email)
+      .select("id,customer_email,provider_payload")
       .order("created_at", { ascending: false })
-      .limit(20);
+      .limit(500);
 
     let { data, error } = await findOrders();
     if (error) {
@@ -69,11 +68,22 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     if (error) throw error;
-    const order = data?.find((candidate) => String(candidate.id).toLowerCase().startsWith(orderCode));
+    const order = data?.find((candidate) => {
+      const matchesCode = String(candidate.id).toLowerCase().startsWith(orderCode);
+      if (!matchesCode) return false;
+
+      const purchaseEmail = String(candidate.customer_email || "").trim().toLowerCase();
+      const providerPayload = candidate.provider_payload && typeof candidate.provider_payload === "object"
+        ? candidate.provider_payload as Record<string, unknown>
+        : {};
+      const payerEmail = String(providerPayload.payer || "").trim().toLowerCase();
+
+      return email === purchaseEmail || email === payerEmail;
+    });
 
     if (!order) {
       return json({
-        error: "No encontramos el pedido. Revisa el número de orden y el correo ingresado para la compra.",
+        error: "No encontramos el pedido. Revisa el número de orden y el correo asociado a la compra o al pago.",
       }, 404);
     }
 
