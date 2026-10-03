@@ -68,7 +68,7 @@ export async function getFlowPaymentStatus(token: string) {
   const params = { apiKey: config.apiKey, token };
   const signed = { ...params, s: signFlowParams(params, config.secretKey) };
   const query = new URLSearchParams(signed).toString();
-  const response = await fetch(`${config.apiUrl}/payment/getStatus?${query}`);
+  const response = await fetch(`${config.apiUrl}/payment/getStatusExtended?${query}`);
   return readFlowResponse(response);
 }
 
@@ -119,6 +119,20 @@ export async function synchronizeFlowPayment(token: string) {
       p_provider_payload: status,
     });
     if (error) throw error;
+
+    // La reserva puede haber sido liberada por una confirmacion anterior. Aun asi,
+    // conservamos la respuesta extendida mas reciente para explicar el rechazo.
+    const { error: updateError } = await config.supabase
+      .from("store_orders")
+      .update({
+        status: "failed",
+        flow_status: Number(status.status),
+        provider_payload: status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", order.id)
+      .neq("status", "paid");
+    if (updateError) throw updateError;
   } else {
     const nextStatus = Number(status.status) === 1 ? "pending" : "review";
     await config.supabase

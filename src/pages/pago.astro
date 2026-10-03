@@ -16,7 +16,7 @@ if (orderId) {
     const [orderResult, itemsResult] = await Promise.all([
       config.supabase
         .from("store_orders")
-        .select("id,customer_email,status,fulfillment_status,total_clp,created_at,paid_at,delivery_method,shipping_payment_mode,shipping_amount_clp,shipping_carrier,shipping_region,shipping_commune,shipping_tracking_number,shipping_tracking_url")
+        .select("id,customer_email,status,flow_status,provider_payload,fulfillment_status,total_clp,created_at,paid_at,delivery_method,shipping_payment_mode,shipping_amount_clp,shipping_carrier,shipping_region,shipping_commune,shipping_tracking_number,shipping_tracking_url")
         .eq("id", orderId)
         .maybeSingle(),
       config.supabase
@@ -38,6 +38,10 @@ if (orderId) {
 const paid = order?.status === "paid";
 const pending = order?.status === "pending";
 const cancelled = order?.fulfillment_status === "cancelled";
+const flowStatus = Number(order?.flow_status || 0);
+const rejected = order?.status === "failed" && flowStatus === 3;
+const annulled = order?.status === "failed" && flowStatus === 4;
+const flowErrorMessage = String(order?.provider_payload?.lastError?.message || "").trim();
 const orderCode = order?.id?.slice(0, 8).toUpperCase() || "";
 const carrierName = order?.shipping_carrier
   ? SHIPPING_CARRIER_NAMES[order.shipping_carrier] || order.shipping_carrier
@@ -115,14 +119,18 @@ const maskedEmail = (() => {
         <span class="status-icon" aria-hidden="true">{cancelled ? "!" : paid ? "✓" : pending ? "…" : "!"}</span>
         <div>
           <p class="kicker">ESTADO DE TU PEDIDO</p>
-          <h1>{cancelled ? "Pedido cancelado" : paid ? "Pago confirmado" : pending ? "Pago en verificación" : "No pudimos confirmar el pago"}</h1>
+          <h1>{cancelled ? "Pedido cancelado" : paid ? "Pago confirmado" : pending ? "Pago en verificación" : rejected ? "Pago rechazado" : annulled ? "Pago anulado" : "No pudimos confirmar el pago"}</h1>
           <p class="status-copy">{cancelled
             ? "El pago fue registrado, pero el pedido fue cancelado. Contáctanos si necesitas revisar el reembolso."
             : paid
               ? "Tu compra fue registrada correctamente. Aquí podrás consultar su preparación y seguimiento."
               : pending
                 ? "Algunos medios de pago demoran unos minutos. Puedes actualizar esta página para consultar nuevamente."
-                : "Si realizaste el pago, contáctanos indicando el correo usado en la compra."}</p>
+                : rejected
+                  ? "Flow informó que el medio de pago rechazó la transacción. No se confirmó ningún cobro."
+                  : annulled
+                    ? "La operación fue anulada antes de completar el pago. No se confirmó ningún cobro."
+                    : "Si realizaste el pago, contáctanos indicando el correo usado en la compra."}</p>
         </div>
         {order && <div class="order-reference"><small>ORDEN</small><strong>{orderCode}</strong><span>{formattedDate}</span></div>}
       </header>
@@ -164,7 +172,7 @@ const maskedEmail = (() => {
               {Number(order.shipping_amount_clp) > 0 && (
                 <div class="products-total"><span>Reparto a domicilio</span><strong>{money(order.shipping_amount_clp)}</strong></div>
               )}
-              <div class="products-total"><span>Total pagado en Flow</span><strong>{money(order.total_clp)}</strong></div>
+              <div class="products-total"><span>{paid ? "Total pagado en Flow" : "Total del intento de pago"}</span><strong>{money(order.total_clp)}</strong></div>
             </section>
           </div>
 
@@ -174,6 +182,14 @@ const maskedEmail = (() => {
               <h2>{order.delivery_method === "shipping" ? localDelivery ? "Reparto a domicilio" : "Envío a domicilio" : "Retiro coordinado"}</h2>
             </div>
             <p class="delivery-result">{deliveryText}</p>
+
+            {rejected && (
+              <div class="payment-error-detail">
+                <strong>Flow rechazó este intento</strong>
+                <span>{flowErrorMessage || "Pulsa Actualizar estado para consultar el motivo informado por el medio de pago."}</span>
+                <small>Si tu banco no descontó dinero, puedes realizar una compra nueva con otro medio de pago.</small>
+              </div>
+            )}
 
             {paid && maskedEmail && (
               <div class="tracking-access">
@@ -211,7 +227,7 @@ const maskedEmail = (() => {
             )}
 
             <div class="payment-actions">
-              <button type="button" onclick="window.location.reload()">Actualizar estado</button>
+              <button class="refresh-payment" type="button" data-order-id={order.id}>Actualizar estado</button>
               <a class="quiet" href={`https://wa.me/56935226409?text=${encodeURIComponent(helpMessage)}`} target="_blank" rel="noreferrer">Consultar por WhatsApp</a>
               <a class="catalog-link" href="/seguimiento">Consultar otro pedido</a>
               <a class="catalog-link" href="/perfumes">Volver al catálogo</a>
@@ -234,6 +250,27 @@ const maskedEmail = (() => {
 {paid && <script>localStorage.removeItem("nuite-cart-v1");</script>}
 
 <script>
+  document.querySelectorAll(".refresh-payment").forEach((button) => {
+    button.addEventListener("click", async () => {
+      const orderId = button.getAttribute("data-order-id") || "";
+      if (!orderId || button.disabled) return;
+      button.disabled = true;
+      button.textContent = "Consultando Flow...";
+      try {
+        const response = await fetch("/api/flow/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ orderId }),
+        });
+        if (!response.ok) throw new Error("No se pudo consultar Flow");
+        window.location.reload();
+      } catch {
+        button.textContent = "No pudimos actualizar · Reintentar";
+        button.disabled = false;
+      }
+    });
+  });
+
   document.querySelectorAll(".copy-tracking").forEach((button) => {
     button.addEventListener("click", async () => {
       const trackingNumber = button.getAttribute("data-tracking-number") || "";
@@ -256,6 +293,7 @@ const maskedEmail = (() => {
   .payment-content{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(280px,.85fr);gap:18px;padding:20px}.payment-main{display:grid;gap:18px}.progress-card,.products-card,.delivery-card{padding:22px;border:1px solid rgba(212,175,55,.13);border-radius:19px;background:rgba(0,0,0,.25)}.section-heading h2{margin:5px 0 0;font-size:20px}.progress-list{display:grid;grid-template-columns:repeat(4,1fr);margin:24px 0 0;padding:0;list-style:none}.progress-list li{position:relative;display:grid;justify-items:center;gap:9px;padding:0 7px;text-align:center}.progress-list li:not(:last-child)::after{content:"";position:absolute;z-index:0;top:15px;left:calc(50% + 18px);width:calc(100% - 36px);height:2px;background:#342f26}.progress-list li.done:not(:last-child)::after{background:#6aa87d}.progress-dot{position:relative;z-index:1;width:31px;height:31px;display:grid;place-items:center;border:2px solid #494236;border-radius:50%;background:#0a0907;color:#776f61;font-size:11px;font-weight:900}.progress-list li.done .progress-dot{border-color:#6aa87d;background:#173321;color:#a9f0bd}.progress-list li.current .progress-dot{border-color:var(--gold2);background:#392c0b;color:#ffe29a}.progress-list strong,.progress-list small{display:block}.progress-list strong{color:#dfd5c1;font-size:11px}.progress-list small{margin-top:4px;color:#786f60;font-size:9px;line-height:1.35}.progress-list li.current strong{color:#ffe8a9}
   .product-list{display:grid;gap:0;margin:14px 0 0;padding:0;list-style:none}.product-list li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:13px 0;border-bottom:1px solid rgba(212,175,55,.1)}.product-quantity{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:rgba(212,175,55,.08);color:var(--gold2);font-size:11px;font-weight:900}.product-list strong,.product-list small{display:block}.product-list strong{color:#eee3cc;font-size:13px}.product-list small{margin-top:4px;color:#807766;font-size:10px}.product-list b{color:#ddc576;font-size:13px;white-space:nowrap}.products-total{display:flex;align-items:center;justify-content:space-between;gap:15px;padding-top:16px}.products-total span{color:#928977;font-size:11px}.products-total strong{color:var(--gold2);font-size:21px}
   .delivery-card{align-self:start}.delivery-result{margin:15px 0;padding:13px;border-left:3px solid var(--gold2);border-radius:10px;background:rgba(212,175,55,.055);color:#b2a995;font-size:11px;line-height:1.5}.tracking-access,.carrier-box,.tracking-box{display:flex;flex-direction:column;gap:5px;margin-top:11px;padding:13px;border:1px solid rgba(212,175,55,.12);border-radius:13px;background:#070706}.tracking-access small,.carrier-box small,.tracking-box small{color:#7e7564;font-size:8px;font-weight:900;letter-spacing:.1em}.tracking-access span{display:flex;justify-content:space-between;gap:12px;color:#918877;font-size:10px}.tracking-access strong,.carrier-box strong,.tracking-box strong{color:#eee2c8;font-size:13px;overflow-wrap:anywhere}.tracking-access p{margin:3px 0 0;color:#82796a;font-size:9px;line-height:1.4}.carrier-box span{color:#867d6d;font-size:10px}.tracking-box{border-color:rgba(34,197,94,.19);background:rgba(34,197,94,.045)}.tracking-actions{display:flex;flex-wrap:wrap;gap:7px;margin-top:4px}.tracking-box a,.copy-tracking{width:fit-content;min-height:32px;display:inline-flex;align-items:center;padding:0 10px;border-radius:9px;font:inherit;font-size:9px;font-weight:900}.tracking-box a{border:1px solid rgba(34,197,94,.2);background:rgba(34,197,94,.07);color:#94dda8;text-decoration:none}.copy-tracking{border:1px solid rgba(212,175,55,.18);background:rgba(212,175,55,.07);color:#e2ca81;cursor:pointer}.tracking-help{margin-top:2px;color:#7e8f82!important;font-size:8px!important;line-height:1.4}.tracking-pending{margin:11px 0 0;padding:12px;border-radius:11px;background:rgba(255,255,255,.035);color:#7e7668;font-size:10px;line-height:1.45}.payment-actions{display:grid;gap:8px;margin-top:17px}.payment-actions button,.payment-actions a{min-height:44px;display:flex;align-items:center;justify-content:center;padding:0 13px;border-radius:11px;font:inherit;font-size:11px;font-weight:900;text-align:center;cursor:pointer}.payment-actions button{border:0;background:linear-gradient(135deg,var(--gold2),var(--gold),#9c741b);color:#080603}.payment-actions .quiet{border:1px solid rgba(37,211,102,.25);background:rgba(37,211,102,.07);color:#9ce2b0}.payment-actions .catalog-link{color:#9b927f}.missing-order{padding:40px 25px;text-align:center}.missing-order>p{color:#9d9482}.payment-actions.centered{max-width:360px;margin:20px auto 0}
+  .payment-error-detail{display:grid;gap:5px;margin-top:11px;padding:13px;border:1px solid rgba(255,110,110,.2);border-radius:13px;background:rgba(239,68,68,.055)}.payment-error-detail strong{color:#ffb1a9;font-size:12px}.payment-error-detail span{color:#d7c6b8;font-size:10px;line-height:1.45}.payment-error-detail small{color:#8f8175;font-size:9px;line-height:1.45}.payment-actions button:disabled{opacity:.7;cursor:wait}
   @media(max-width:800px){.payment-content{grid-template-columns:1fr}.delivery-card{order:-1}.payment-header{grid-template-columns:auto 1fr}.order-reference{grid-column:1/-1;align-items:flex-start;padding-left:80px;text-align:left}}
   @media(max-width:560px){.payment-page{padding:26px 10px 45px}.payment-shell{border-radius:19px}.payment-header{grid-template-columns:auto minmax(0,1fr);gap:12px;padding:18px 15px}.status-icon{width:46px;height:46px;font-size:23px}.payment-header h1{font-size:25px}.status-copy{font-size:11px;line-height:1.45}.order-reference{grid-column:1/-1;display:grid;grid-template-columns:auto auto 1fr;align-items:center;gap:8px;padding:10px 0 0;border-top:1px solid rgba(212,175,55,.1);text-align:left}.order-reference span{max-width:none;text-align:right}.payment-content{gap:11px;padding:11px}.payment-main{gap:11px}.progress-card,.products-card,.delivery-card{padding:15px;border-radius:15px}.section-heading h2{font-size:17px}.progress-list{grid-template-columns:1fr;margin-top:15px}.progress-list li{grid-template-columns:29px 1fr;justify-items:start;gap:10px;padding:7px 0;text-align:left}.progress-list li:not(:last-child)::after{top:36px;bottom:-7px;left:14px;width:2px;height:auto}.progress-dot{width:29px;height:29px}.progress-list small{margin-top:2px}.product-list li{gap:9px;padding:11px 0}.product-quantity{width:30px;height:30px}.product-list strong{font-size:11px}.product-list b{font-size:11px}.products-total strong{font-size:18px}}
 </style>
