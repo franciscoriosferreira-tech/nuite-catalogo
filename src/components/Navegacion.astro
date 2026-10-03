@@ -5,7 +5,13 @@ const rutaActual = Astro.url.pathname;
 <header class="site-header">
   <div class="header-main">
     <a href="/" class="brand" aria-label="Ir al inicio de Nuite Perfumes">
-      <img class="brand-logo" src="/img/logo.png" alt="Nuité Perfumes" width="220" height="96" />
+      <span class="logo-circle">
+        <img src="/img/logo.png" alt="" width="64" height="64" />
+      </span>
+      <span class="brand-text">
+        <strong>Nuit&eacute;</strong>
+        <small>PERFUMES</small>
+      </span>
     </a>
 
 
@@ -27,13 +33,6 @@ const rutaActual = Astro.url.pathname;
         <span class="desktop-label">Hablar por WhatsApp</span>
         <span class="mobile-label">WhatsApp</span>
       </a>
-      <button class="cart-link" type="button" data-cart-open aria-label="Abrir carrito de compras">
-        <svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 3h2l2.4 11.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L21 7H6.2"></path>
-          <circle cx="9" cy="20" r="1.25" fill="currentColor" stroke="none"></circle>
-          <circle cx="18" cy="20" r="1.25" fill="currentColor" stroke="none"></circle>
-        </svg>
-      </button>
     </div>
   </div>
 
@@ -44,14 +43,6 @@ const rutaActual = Astro.url.pathname;
       <a href="/marcas" aria-current={rutaActual === "/marcas" ? "page" : undefined}>Marcas</a>
 
       <a href="/ofertas" aria-current={rutaActual === "/ofertas" ? "page" : undefined}>Ofertas</a>
-      <a href="/sorteos" aria-current={rutaActual === "/sorteos" ? "page" : undefined}>Sorteos</a>
-      <a class="tracking-nav" href="/seguimiento" aria-current={rutaActual === "/seguimiento" ? "page" : undefined}>
-        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5z"></path>
-          <path d="M3.5 7.7 12 12l8.5-4.3M12 12v9"></path>
-        </svg>
-        <span>Seguimiento</span>
-      </a>
       <a href="/contacto" aria-current={rutaActual === "/contacto" ? "page" : undefined}>Contacto</a>
     </nav>
   </div>
@@ -87,9 +78,9 @@ const rutaActual = Astro.url.pathname;
 
   .header-main {
     max-width: 1380px;
-    min-height: 92px;
+    min-height: 76px;
     margin: 0 auto;
-    padding: 14px 32px;
+    padding: 10px 28px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -99,49 +90,65 @@ const rutaActual = Astro.url.pathname;
   .brand {
     display: inline-flex;
     align-items: center;
+    gap: 12px;
     color: var(--champagne);
   }
 
-  .brand-logo {
-    width: 205px;
-    height: 70px;
-    display: block;
-    object-fit: contain;
-    object-position: left center;
+  .logo-circle {
+    width: 52px;
+    height: 52px;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    border: 1px solid rgba(212, 175, 55, 0.46);
+    border-radius: 50%;
+    background: #050505;
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.08);
+  }
+
+  .logo-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1;
+  }
+
+  .brand-text strong {
+    color: var(--champagne);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 29px;
+    letter-spacing: 0;
+  }
+
+  .brand-text small {
+    margin-top: 5px;
+    color: var(--champagne);
+    font-size: 9px;
+    font-weight: 900;
+    letter-spacing: 0;
   }
 
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 11px;
+    gap: 9px;
   }
 
-  .header-actions a,
-  .cart-link {
-    min-height: 48px;
-    padding: 0 19px;
+  .header-actions a {
+    min-height: 40px;
+    padding: 0 16px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border-radius: 11px;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 900;
     white-space: nowrap;
-  }
-
-  .cart-link {
-    width: 48px;
-    padding: 0;
-    border: 1px solid rgba(212, 175, 55, 0.35);
-    background: #0b0b09;
-    color: var(--gold2);
-    cursor: pointer;
-  }
-
-  .cart-link svg {
-    width: 24px;
-    height: 24px;
-    flex: none;
   }
 
   .quiet-link {
@@ -166,19 +173,19 @@ const rutaActual = Astro.url.pathname;
 
   .menu {
     max-width: 1380px;
-    min-height: 52px;
+    min-height: 45px;
     margin: 0 auto;
-    padding: 0 32px;
+    padding: 0 28px;
     display: flex;
     align-items: center;
-    gap: 34px;
+    gap: 28px;
     color: #fff;
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 850;
   }
 
   .menu > a {
-    height: 52px;
+    height: 45px;
     display: inline-flex;
     align-items: center;
     border: 0;
@@ -190,16 +197,6 @@ const rutaActual = Astro.url.pathname;
     white-space: nowrap;
   }
 
-  .tracking-nav {
-    gap: 6px;
-  }
-
-  .tracking-nav svg {
-    width: 15px;
-    height: 15px;
-    flex: none;
-  }
-
   .menu > a:hover,
   .menu > a[aria-current="page"] {
     border-bottom-color: var(--gold2);
@@ -208,12 +205,12 @@ const rutaActual = Astro.url.pathname;
 
   .benefit-strip {
     --ticker-gap: 54px;
-    min-height: 36px;
-    padding: 8px 0;
+    min-height: 34px;
+    padding: 7px 0;
     overflow: hidden;
     background: rgba(8, 8, 7, 0.96);
     color: #c5baa2;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 800;
     white-space: nowrap;
   }
@@ -271,36 +268,37 @@ const rutaActual = Astro.url.pathname;
     }
 
     .header-main {
-      min-height: 66px;
-      padding: 9px 10px;
-      gap: 8px;
+      min-height: 62px;
+      padding: 8px 12px;
+      gap: 10px;
     }
 
-    .brand-logo {
-      width: 118px;
-      height: 48px;
+    .logo-circle {
+      width: 42px;
+      height: 42px;
+    }
+
+    .brand {
+      gap: 9px;
+    }
+
+    .brand-text strong {
+      font-size: 23px;
+    }
+
+    .brand-text small {
+      font-size: 8px;
     }
 
     .header-actions {
-      gap: 5px;
+      gap: 6px;
     }
 
-    .header-actions a,
-    .cart-link {
-      min-height: 40px;
-      padding: 0 8px;
+    .header-actions a {
+      min-height: 37px;
+      padding: 0 9px;
       border-radius: 10px;
       font-size: 9px;
-    }
-
-    .cart-link {
-      width: 40px;
-      padding: 0;
-    }
-
-    .cart-link svg {
-      width: 22px;
-      height: 22px;
     }
 
     .desktop-label {
@@ -313,61 +311,22 @@ const rutaActual = Astro.url.pathname;
 
     .menu {
       width: 100%;
-      min-height: 76px;
-      padding: 5px 8px;
-      display: grid;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 2px 5px;
-      font-size: 10.5px;
+      min-height: 42px;
+      padding: 0 12px;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
     }
 
     .menu > a {
-      width: 100%;
-      height: 32px;
-      justify-content: center;
-      border-bottom-width: 1px;
+      height: 42px;
     }
-
-    .tracking-nav { gap: 4px; }
-    .tracking-nav svg { width: 12px; height: 12px; }
 
     .benefit-strip {
-      min-height: 33px;
-      padding: 7px 0;
-      font-size: 9.5px;
+      min-height: 31px;
+      padding: 6px 0;
+      font-size: 9px;
     }
-  }
-
-  @media (max-width: 390px) {
-    .header-main {
-      padding-inline: 8px;
-    }
-
-    .header-actions a {
-      padding-inline: 6px;
-      font-size: 8.5px;
-    }
-
-    .menu {
-      gap: 2px 4px;
-      font-size: 10px;
-    }
-  }
-
-  @media (max-width: 350px) {
-    .brand-logo {
-      width: 90px;
-    }
-  }
-
-  @media (max-width: 620px) {
-    .header-main { min-height: 58px; padding: 6px 9px; }
-    .brand-logo { width: 105px; height: 42px; }
-    .header-actions a, .cart-link { min-height: 38px; }
-    .cart-link { width: 38px; }
-    .menu { min-height: 70px; font-size: 10px; }
-    .menu > a { height: 30px; }
-    .benefit-strip { min-height: 28px; padding: 5px 0; font-size: 9px; }
   }
 
   @media (prefers-reduced-motion: reduce) {

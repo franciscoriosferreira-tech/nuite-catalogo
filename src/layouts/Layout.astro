@@ -1,6 +1,5 @@
 ---
 import "../styles/global.css";
-import CartDrawer from "../components/CartDrawer.astro";
 
 const { title = "Nuite Perfumes" } = Astro.props;
 ---
@@ -10,12 +9,10 @@ const { title = "Nuite Perfumes" } = Astro.props;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/png" href="/img/logo.png" />
     <title>{title}</title>
   </head>
 
   <body>
     <slot />
-    <CartDrawer />
   </body>
 </html>
