@@ -32,7 +32,9 @@ export const POST: APIRoute = async ({ request }) => {
     if (!/^\S+@\S+\.\S+$/.test(email)) return json({ error: "Ingresa un correo válido." }, 400);
     if (customerName.length < 3) return json({ error: "Ingresa el nombre completo de quien recibirá el pedido." }, 400);
     if (!phone) return json({ error: "Ingresa un teléfono chileno válido." }, 400);
-    if (!["pickup", "shipping_collect"].includes(method)) return json({ error: "Selecciona una forma de entrega válida." }, 400);
+    if (!["pickup", "local_rio_bueno", "local_la_union", "shipping_collect"].includes(method)) {
+      return json({ error: "Selecciona una forma de entrega válida." }, 400);
+    }
     if (rawItems.length === 0 || rawItems.length > 20) return json({ error: "El carrito no es válido." }, 400);
 
     const delivery = {
@@ -48,21 +50,23 @@ export const POST: APIRoute = async ({ request }) => {
       notes: clean(rawDelivery.notes, 300),
     };
 
-    if (method === "shipping_collect") {
-      delivery.region = clean(rawDelivery.region, 80);
-      delivery.commune = clean(rawDelivery.commune, 70);
+    if (method !== "pickup") {
+      const nationalShipping = method === "shipping_collect";
+      delivery.region = nationalShipping ? clean(rawDelivery.region, 80) : "Los Ríos";
+      delivery.commune = nationalShipping
+        ? clean(rawDelivery.commune, 70)
+        : method === "local_la_union" ? "La Unión" : "Río Bueno";
       delivery.address = clean(rawDelivery.address, 140);
       delivery.addressNumber = clean(rawDelivery.addressNumber, 15);
       delivery.addressExtra = clean(rawDelivery.addressExtra, 140);
-      delivery.carrier = clean(rawDelivery.carrier, 30);
-
-      if (!CHILE_REGIONS.includes(delivery.region as typeof CHILE_REGIONS[number])) {
+      delivery.carrier = nationalShipping ? clean(rawDelivery.carrier, 30) : "";
+      if (nationalShipping && !CHILE_REGIONS.includes(delivery.region as typeof CHILE_REGIONS[number])) {
         return json({ error: "Selecciona una región válida." }, 400);
       }
       if (delivery.commune.length < 2 || delivery.address.length < 3 || !delivery.addressNumber) {
-        return json({ error: "Completa la comuna y la dirección de entrega." }, 400);
+        return json({ error: "Completa la dirección de entrega." }, 400);
       }
-      if (!SHIPPING_CARRIER_NAMES[delivery.carrier]) {
+      if (nationalShipping && !SHIPPING_CARRIER_NAMES[delivery.carrier]) {
         return json({ error: "Selecciona Starken, Chilexpress o Blue Express." }, 400);
       }
     }
@@ -84,19 +88,47 @@ export const POST: APIRoute = async ({ request }) => {
       p_commerce_order: commerceOrder,
       p_customer_email: email,
       p_items: items,
-      p_delivery: delivery,
     });
     const order = created?.[0];
     if (orderError || !order) throw orderError || new Error("No se pudo crear la orden.");
-    const total = Number(order.created_total_clp);
+    const productsTotal = Number(order.created_total_clp);
     const orderId = order.created_order_id;
+    const shippingAmount = method === "local_la_union" ? 2000 : 0;
+    const total = productsTotal + shippingAmount;
+    const nationalShipping = method === "shipping_collect";
+
+    const { error: deliveryError } = await config.supabase.from("store_orders").update({
+      customer_name: delivery.customerName,
+      customer_phone: delivery.phone,
+      delivery_method: method === "pickup" ? "pickup" : "shipping",
+      shipping_payment_mode: method === "pickup" ? "none" : nationalShipping ? "collect" : "prepaid",
+      shipping_carrier: nationalShipping ? delivery.carrier : null,
+      shipping_region: method === "pickup" ? null : delivery.region,
+      shipping_commune: method === "pickup" ? null : delivery.commune,
+      shipping_address: method === "pickup" ? null : delivery.address,
+      shipping_address_number: method === "pickup" ? null : delivery.addressNumber,
+      shipping_address_extra: method === "pickup" ? null : delivery.addressExtra || null,
+      shipping_notes: delivery.notes || null,
+      products_total_clp: productsTotal,
+      shipping_amount_clp: shippingAmount,
+      total_clp: total,
+    }).eq("id", orderId);
+
+    if (deliveryError) {
+      await config.supabase.rpc("release_store_order", {
+        p_order_id: orderId,
+        p_flow_status: 0,
+        p_provider_payload: { stage: "delivery_setup", error: deliveryError.message.slice(0, 500) },
+      });
+      throw deliveryError;
+    }
 
     let flow;
     try {
       flow = await createFlowPayment({
         apiKey: config.apiKey,
         commerceOrder,
-        subject: `Compra Nuité Perfumes (${items.length} producto${items.length === 1 ? "" : "s"} · ${method === "pickup" ? "retiro" : `envío por pagar vía ${SHIPPING_CARRIER_NAMES[delivery.carrier]}`})`,
+        subject: `Compra Nuité Perfumes (${items.length} producto${items.length === 1 ? "" : "s"} · ${method === "pickup" ? "retiro" : method === "local_rio_bueno" ? "reparto Río Bueno" : method === "local_la_union" ? "reparto La Unión" : "envío por pagar"})`,
         currency: "CLP",
         amount: total,
         email,

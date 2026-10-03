@@ -55,9 +55,21 @@ import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
               <span class="radio-dot" aria-hidden="true"></span>
             </label>
             <label class="delivery-option">
+              <input type="radio" name="deliveryMethod" value="local_rio_bueno" />
+              <span class="delivery-icon" aria-hidden="true">⌂</span>
+              <span><strong>Reparto en Río Bueno</strong><small>A domicilio · gratis</small></span>
+              <span class="radio-dot" aria-hidden="true"></span>
+            </label>
+            <label class="delivery-option">
+              <input type="radio" name="deliveryMethod" value="local_la_union" />
+              <span class="delivery-icon" aria-hidden="true">⌂</span>
+              <span><strong>Reparto a La Unión</strong><small>A domicilio · $2.000</small></span>
+              <span class="radio-dot" aria-hidden="true"></span>
+            </label>
+            <label class="delivery-option">
               <input type="radio" name="deliveryMethod" value="shipping_collect" />
               <span class="delivery-icon" aria-hidden="true">▰</span>
-              <span><strong>Envío por pagar</strong><small>A domicilio · pagas al recibir</small></span>
+              <span><strong>Otras comunas y regiones</strong><small>Envío por transportista</small></span>
               <span class="radio-dot" aria-hidden="true"></span>
             </label>
           </div>
@@ -69,14 +81,14 @@ import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
 
           <div id="shippingFields" class="shipping-fields" hidden>
             <div class="field-grid">
-              <label class="field">
+              <label id="shippingRegionField" class="field">
                 <span>Región</span>
                 <select id="shippingRegion" name="region" autocomplete="address-level1">
                   <option value="">Selecciona una región</option>
                   {CHILE_REGIONS.map((region) => <option value={region}>{region}</option>)}
                 </select>
               </label>
-              <label class="field">
+              <label id="shippingCommuneField" class="field">
                 <span>Comuna</span>
                 <input id="shippingCommune" name="commune" type="text" autocomplete="address-level2" maxlength="70" placeholder="Ej.: Osorno" />
               </label>
@@ -92,22 +104,18 @@ import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
                 <span>Departamento, parcela o referencia <em>Opcional</em></span>
                 <input id="shippingAddressExtra" name="addressExtra" type="text" maxlength="140" placeholder="Ej.: Depto. 4, casa azul o camino rural" />
               </label>
-              <label class="field wide">
-                <span>Empresa de transporte preferida</span>
+              <label id="shippingCarrierField" class="field wide">
+                <span>Empresa de envío preferida</span>
                 <select id="shippingCarrier" name="carrier">
-                  <option value="">Selecciona una empresa</option>
+                  <option value="">Elige una opción</option>
                   {SHIPPING_CARRIERS.map((carrier) => <option value={carrier.id}>{carrier.name}</option>)}
                 </select>
               </label>
             </div>
 
-            <div class="delivery-message collect-message">
-              <strong>El envío se paga al recibir</strong>
-              <p>Flow cobrará solamente los perfumes. Prepararemos el paquete y te confirmaremos por WhatsApp la empresa disponible y el valor informado por el transportista antes de despacharlo.</p>
-            </div>
-            <div class="prepaid-coming">
-              <span>PRÓXIMA ETAPA</span>
-              <p>El pago anticipado del despacho aparecerá aquí cuando conectemos una cuenta de transporte con tarifas reales.</p>
+            <div id="deliveryExplanation" class="delivery-message collect-message">
+              <strong id="deliveryExplanationTitle">El envío se paga al recibir</strong>
+              <p id="deliveryExplanationText">Flow cobrará solamente los perfumes. Después coordinaremos contigo por WhatsApp la empresa de transporte y te informaremos el valor antes de despachar.</p>
             </div>
           </div>
 
@@ -124,7 +132,7 @@ import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
         <div class="summary-line"><span>Entrega</span><strong id="shippingSummary">Retiro sin costo</strong></div>
         <div class="order-total"><span>Total en Flow</span><strong id="checkoutTotal">$0</strong></div>
         <p id="summaryHelp" class="summary-help">Retiras en Río Bueno, en un lugar y horario coordinado por WhatsApp.</p>
-        <button id="payButton" type="submit">Pagar productos con Flow</button>
+        <button id="payButton" type="submit">Pagar con Flow</button>
         <p id="checkoutError" class="form-error" role="alert" aria-live="polite"></p>
         <p class="secure-note">Flow procesa el pago de forma segura. Nuité no recibe los datos de tu tarjeta.</p>
       </aside>
@@ -147,6 +155,11 @@ import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
   const countBox = document.querySelector("#checkoutCount");
   const pickupDetails = document.querySelector("#pickupDetails");
   const shippingFields = document.querySelector("#shippingFields");
+  const shippingRegionField = document.querySelector("#shippingRegionField");
+  const shippingCommuneField = document.querySelector("#shippingCommuneField");
+  const shippingCarrierField = document.querySelector("#shippingCarrierField");
+  const deliveryExplanationTitle = document.querySelector("#deliveryExplanationTitle");
+  const deliveryExplanationText = document.querySelector("#deliveryExplanationText");
   const format = (value) => new Intl.NumberFormat("es-CL", { style: "currency", currency: "CLP", maximumFractionDigits: 0 }).format(value);
 
   function getDeliveryMethod() {
@@ -154,22 +167,43 @@ import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
   }
 
   function setDeliveryMode() {
-    const shipping = getDeliveryMethod() === "shipping_collect";
-    pickupDetails.hidden = shipping;
-    shippingFields.hidden = !shipping;
+    const method = getDeliveryMethod();
+    const delivery = method !== "pickup";
+    const nationalShipping = method === "shipping_collect";
+    pickupDetails.hidden = delivery;
+    shippingFields.hidden = !delivery;
+    shippingRegionField.hidden = !nationalShipping;
+    shippingCommuneField.hidden = !nationalShipping;
+    shippingCarrierField.hidden = !nationalShipping;
     shippingFields.querySelectorAll("input, select").forEach((field) => {
-      field.disabled = !shipping;
-      if (["shippingRegion", "shippingCommune", "shippingAddress", "shippingAddressNumber", "shippingCarrier"].includes(field.id)) {
-        field.required = shipping;
-      }
+      const nationalOnly = ["shippingRegion", "shippingCommune", "shippingCarrier"].includes(field.id);
+      field.disabled = !delivery || (nationalOnly && !nationalShipping);
+      field.required = delivery && (!nationalOnly || nationalShipping);
     });
     document.querySelectorAll(".delivery-option").forEach((option) => {
       option.classList.toggle("selected", option.querySelector("input")?.checked);
     });
-    shippingSummary.textContent = shipping ? "Por pagar al recibir" : "Retiro sin costo";
-    summaryHelp.textContent = shipping
-      ? "Flow cobrará solo los productos. El despacho se paga directamente al transportista al recibir."
-      : "Retiras en Río Bueno, en un lugar y horario coordinado por WhatsApp.";
+    const copy = {
+      pickup: ["Retiro sin costo", "Retiras en Río Bueno, en un lugar y horario coordinado por WhatsApp.", "Retiro coordinado", "Después del pago coordinaremos por WhatsApp el lugar y el horario."],
+      local_rio_bueno: ["Reparto gratis", "El reparto a domicilio dentro de Río Bueno no tiene costo.", "Reparto gratis en Río Bueno", "El despacho local está incluido sin costo. Coordinaremos la entrega por WhatsApp."],
+      local_la_union: ["$2.000", "El reparto a La Unión se suma al total y se paga junto con los perfumes.", "Reparto a La Unión", "El despacho cuesta $2.000 y quedará incluido en tu pago de Flow."],
+      shipping_collect: ["Por pagar al recibir", "Flow cobrará los perfumes. El despacho se paga al transportista al recibir.", "Envío por transportista", "Elige la empresa que prefieras. Te confirmaremos por WhatsApp el valor informado antes de despachar."],
+    }[method] || ["Retiro sin costo", "Retiro coordinado en Río Bueno.", "Retiro coordinado", "Coordinaremos la entrega por WhatsApp."];
+    shippingSummary.textContent = copy[0];
+    summaryHelp.textContent = copy[1];
+    deliveryExplanationTitle.textContent = copy[2];
+    deliveryExplanationText.textContent = copy[3];
+    renderTotals();
+  }
+
+  function shippingAmount() {
+    return getDeliveryMethod() === "local_la_union" ? 2000 : 0;
+  }
+
+  function renderTotals() {
+    const productsTotal = cartTotal(readCart());
+    totalBox.textContent = format(productsTotal + shippingAmount());
+    productsTotalBox.textContent = format(productsTotal);
   }
 
   function render() {
@@ -178,8 +212,7 @@ import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
     itemsBox.replaceChildren();
     empty.hidden = cart.length > 0;
     payButton.disabled = cart.length === 0;
-    totalBox.textContent = format(productsTotal);
-    productsTotalBox.textContent = format(productsTotal);
+    renderTotals();
     const unitCount = cart.reduce((sum, item) => sum + item.quantity, 0);
     countBox.textContent = `${unitCount} ${unitCount === 1 ? "producto" : "productos"}`;
 
@@ -234,9 +267,9 @@ import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
       phone: String(data.get("phone") || ""),
       region: method === "shipping_collect" ? String(data.get("region") || "") : "",
       commune: method === "shipping_collect" ? String(data.get("commune") || "") : "",
-      address: method === "shipping_collect" ? String(data.get("address") || "") : "",
-      addressNumber: method === "shipping_collect" ? String(data.get("addressNumber") || "") : "",
-      addressExtra: method === "shipping_collect" ? String(data.get("addressExtra") || "") : "",
+      address: method !== "pickup" ? String(data.get("address") || "") : "",
+      addressNumber: method !== "pickup" ? String(data.get("addressNumber") || "") : "",
+      addressExtra: method !== "pickup" ? String(data.get("addressExtra") || "") : "",
       carrier: method === "shipping_collect" ? String(data.get("carrier") || "") : "",
       notes: String(data.get("notes") || ""),
     };
@@ -257,7 +290,7 @@ import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
     } catch (error) {
       errorBox.textContent = error instanceof Error ? error.message : "No se pudo iniciar el pago.";
       payButton.disabled = false;
-      payButton.textContent = "Pagar productos con Flow";
+      payButton.textContent = "Pagar con Flow";
     }
   });
 
@@ -272,7 +305,7 @@ import { CHILE_REGIONS, SHIPPING_CARRIERS } from "../data/shipping";
   .checkout-main { min-width:0 }.kicker{margin:0;color:var(--gold2);font-size:11px;font-weight:900}h1{margin:9px 0;font-size:clamp(38px,5vw,56px)}.lead{max-width:740px;margin:0 0 28px;color:#aaa18e;line-height:1.55}
   .checkout-list-head{display:flex;align-items:end;justify-content:space-between;gap:16px;margin-bottom:12px}.checkout-list-head h2{margin:0;font-size:20px}.checkout-list-head span{color:#978f7f;font-size:12px;font-weight:800}.checkout-items{display:grid;gap:10px}.empty{color:#8f856f;font-size:12px}.empty a{color:var(--gold2)}
   .checkout-card{margin-top:20px;padding:22px;border:1px solid rgba(212,175,55,.18);border-radius:19px;background:#0d0c09}.step-heading{display:flex;align-items:center;gap:13px;margin-bottom:20px}.step-heading>span{width:34px;height:34px;display:grid;place-items:center;flex:0 0 auto;border-radius:50%;background:var(--gold);color:#090704;font-weight:1000}.step-heading small{display:block;margin-bottom:3px;color:var(--gold2);font-size:9px;font-weight:900;letter-spacing:.13em}.step-heading h2{margin:0;font-size:21px}
-  .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:block}.field.wide{grid-column:1/-1}.field.wide-address{grid-column:span 1}.field span{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;color:#c9bea7;font-size:11px;font-weight:800}.field em{color:#766f61;font-size:9px;font-style:normal;font-weight:700}.field input,.field select,.field textarea{width:100%;border:1px solid rgba(212,175,55,.24);border-radius:11px;background:#050505;color:#fff;font:inherit;outline:none}.field input,.field select{height:47px;padding:0 12px}.field textarea{padding:12px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold2);box-shadow:0 0 0 3px rgba(212,175,55,.08)}.field select{color-scheme:dark}
+  .field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.field{display:block}.field[hidden]{display:none}.field.wide{grid-column:1/-1}.field.wide-address{grid-column:span 1}.field span{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px;color:#c9bea7;font-size:11px;font-weight:800}.field em{color:#766f61;font-size:9px;font-style:normal;font-weight:700}.field input,.field select,.field textarea{width:100%;border:1px solid rgba(212,175,55,.24);border-radius:11px;background:#050505;color:#fff;font:inherit;outline:none}.field input,.field select{height:47px;padding:0 12px}.field textarea{padding:12px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--gold2);box-shadow:0 0 0 3px rgba(212,175,55,.08)}.field select{color-scheme:dark}
   .delivery-options{display:grid;grid-template-columns:1fr 1fr;gap:10px}.delivery-option{position:relative;min-height:76px;display:grid;grid-template-columns:37px 1fr 18px;align-items:center;gap:10px;padding:13px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:#070707;cursor:pointer}.delivery-option.selected{border-color:var(--gold2);background:linear-gradient(145deg,rgba(212,175,55,.09),#080705)}.delivery-option>input{position:absolute;opacity:0;pointer-events:none}.delivery-icon{width:37px;height:37px;display:grid;place-items:center;border-radius:10px;background:rgba(212,175,55,.1);color:var(--gold2);font-size:20px}.delivery-option strong,.delivery-option small{display:block}.delivery-option strong{margin-bottom:4px;font-size:13px}.delivery-option small{color:#8f8778;font-size:10px;line-height:1.35}.radio-dot{width:17px;height:17px;border:2px solid #5e5749;border-radius:50%}.selected .radio-dot{border:5px solid var(--gold2)}
   .delivery-message{margin-top:14px;padding:14px 16px;border-left:3px solid var(--gold2);border-radius:8px;background:rgba(212,175,55,.055)}.delivery-message strong{color:var(--gold2);font-size:12px}.delivery-message p{margin:5px 0 0;color:#999080;font-size:12px;line-height:1.5}.shipping-fields{margin-top:16px}.collect-message{margin-top:16px}.prepaid-coming{margin-top:10px;padding:12px 14px;border:1px dashed rgba(212,175,55,.25);border-radius:10px}.prepaid-coming span{color:#8f856f;font-size:9px;font-weight:900;letter-spacing:.1em}.prepaid-coming p{margin:4px 0 0;color:#777064;font-size:11px;line-height:1.45}.order-notes{margin-top:16px}
   .order-box{position:sticky;top:160px;padding:23px;border:1px solid rgba(212,175,55,.26);border-radius:20px;background:linear-gradient(155deg,rgba(212,175,55,.06),transparent 45%),#0d0c09}.order-box h2{margin:0 0 16px;font-size:24px}.summary-line,.order-total{display:flex;align-items:center;justify-content:space-between;gap:12px}.summary-line{padding:10px 0;color:#a69d8c;font-size:12px}.summary-line strong{color:#ddd4c3;text-align:right}.order-total{margin-top:7px;padding:16px 0;border-block:1px solid rgba(212,175,55,.16)}.order-total strong{color:var(--gold2);font-size:26px}.summary-help{margin:13px 0;color:#918879;font-size:11px;line-height:1.45}.order-box button{width:100%;min-height:51px;margin-top:3px;border:0;border-radius:12px;background:linear-gradient(135deg,var(--gold2),var(--gold),#9c741b);color:#050505;font:inherit;font-weight:1000;cursor:pointer}.order-box button:disabled{opacity:.5;cursor:wait}.form-error{margin:9px 0 0;color:#ff8a8a;font-size:12px;line-height:1.45}.secure-note{margin:14px 0 0;color:#8f856f;font-size:11px;line-height:1.5}

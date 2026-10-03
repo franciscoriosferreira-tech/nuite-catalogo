@@ -16,7 +16,7 @@ if (orderId) {
     const [orderResult, itemsResult] = await Promise.all([
       config.supabase
         .from("store_orders")
-        .select("id,customer_email,status,fulfillment_status,total_clp,created_at,paid_at,delivery_method,shipping_carrier,shipping_region,shipping_commune,shipping_tracking_number,shipping_tracking_url")
+        .select("id,customer_email,status,fulfillment_status,total_clp,created_at,paid_at,delivery_method,shipping_payment_mode,shipping_amount_clp,shipping_carrier,shipping_region,shipping_commune,shipping_tracking_number,shipping_tracking_url")
         .eq("id", orderId)
         .maybeSingle(),
       config.supabase
@@ -60,9 +60,14 @@ const formattedDate = order?.paid_at || order?.created_at
     })
   : "";
 
-const deliveryText = order?.delivery_method === "shipping"
-  ? `Envío por pagar mediante ${carrierName}${order.shipping_commune ? ` hacia ${order.shipping_commune}` : ""}. El despacho se paga al transportista al recibir.`
-  : "Retiro coordinado en Río Bueno. Te escribiremos para acordar el lugar y el horario.";
+const localDelivery = order?.delivery_method === "shipping" && order?.shipping_payment_mode === "prepaid";
+const deliveryText = order?.delivery_method !== "shipping"
+  ? "Retiro coordinado en Río Bueno. Te escribiremos para acordar el lugar y el horario."
+  : localDelivery
+    ? Number(order.shipping_amount_clp) > 0
+      ? `Reparto a domicilio en ${order.shipping_commune}. El despacho de ${money(order.shipping_amount_clp)} ya está incluido en el total pagado.`
+      : `Reparto a domicilio sin costo en ${order.shipping_commune || "Río Bueno"}. Coordinaremos la entrega por WhatsApp.`
+    : `Envío por pagar mediante ${carrierName}${order.shipping_commune ? ` hacia ${order.shipping_commune}` : ""}. El despacho se paga al transportista al recibir.`;
 const shippingSteps = [
   { key: "new", label: "Pago confirmado", copy: "Recibimos correctamente tu compra." },
   { key: "preparing", label: "Preparando pedido", copy: "Estamos preparando y protegiendo tus perfumes." },
@@ -75,7 +80,15 @@ const pickupSteps = [
   { key: "ready_pickup", label: "Listo para retiro", copy: "Coordinaremos contigo el lugar y horario." },
   { key: "delivered", label: "Pedido entregado", copy: "La entrega fue completada." },
 ];
-const progressSteps = order?.delivery_method === "shipping" ? shippingSteps : pickupSteps;
+const localDeliverySteps = [
+  { key: "new", label: "Pago confirmado", copy: "Recibimos correctamente tu compra." },
+  { key: "preparing", label: "Preparando pedido", copy: "Estamos preparando tus perfumes." },
+  { key: "shipped", label: "En reparto", copy: "Tu pedido salió a reparto." },
+  { key: "delivered", label: "Pedido entregado", copy: "La entrega fue completada." },
+];
+const progressSteps = order?.delivery_method === "shipping"
+  ? localDelivery ? localDeliverySteps : shippingSteps
+  : pickupSteps;
 const normalizedStatus = order?.delivery_method === "shipping" && order?.fulfillment_status === "ready_pickup"
   ? "preparing"
   : order?.delivery_method === "pickup" && order?.fulfillment_status === "shipped"
@@ -148,6 +161,9 @@ const maskedEmail = (() => {
                   </li>
                 ))}
               </ul>
+              {Number(order.shipping_amount_clp) > 0 && (
+                <div class="products-total"><span>Reparto a domicilio</span><strong>{money(order.shipping_amount_clp)}</strong></div>
+              )}
               <div class="products-total"><span>Total pagado en Flow</span><strong>{money(order.total_clp)}</strong></div>
             </section>
           </div>
@@ -155,7 +171,7 @@ const maskedEmail = (() => {
           <aside class="delivery-card">
             <div class="section-heading">
               <p>ENTREGA</p>
-              <h2>{order.delivery_method === "shipping" ? "Envío a domicilio" : "Retiro coordinado"}</h2>
+              <h2>{order.delivery_method === "shipping" ? localDelivery ? "Reparto a domicilio" : "Envío a domicilio" : "Retiro coordinado"}</h2>
             </div>
             <p class="delivery-result">{deliveryText}</p>
 
@@ -168,7 +184,7 @@ const maskedEmail = (() => {
               </div>
             )}
 
-            {order.delivery_method === "shipping" && (
+            {order.delivery_method === "shipping" && order.shipping_carrier && (
               <div class="carrier-box">
                 <small>TRANSPORTISTA</small>
                 <strong>{carrierName}</strong>
@@ -190,7 +206,7 @@ const maskedEmail = (() => {
               </div>
             )}
 
-            {order.delivery_method === "shipping" && paid && !cancelled && !order.shipping_tracking_number && (
+            {order.delivery_method === "shipping" && order.shipping_carrier && paid && !cancelled && !order.shipping_tracking_number && (
               <p class="tracking-pending">El seguimiento aparecerá aquí cuando entreguemos el pedido al transportista.</p>
             )}
 
