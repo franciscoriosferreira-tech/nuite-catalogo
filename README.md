@@ -8,6 +8,7 @@ Tienda integrada de perfumes y sorteos construida con Astro, Supabase, Vercel y 
 - Carrito persistente y checkout de perfumes.
 - Pago de perfumes mediante Flow, validado en el servidor.
 - Confirmación idempotente y descuento de stock en una transacción de PostgreSQL.
+- Correo automático al comprador y a Nuité cuando Flow confirma el pago.
 - Sorteos dentro del mismo sitio, con packs solicitados exclusivamente por WhatsApp.
 
 Los tickets de sorteos nunca se agregan al carrito y nunca se envían a Flow.
@@ -25,11 +26,18 @@ La interfaz y el carrito funcionan sin credenciales. Para completar un pago se r
 
 1. Aplicar `supabase/migrations/202609190001_store_checkout.sql` primero en un proyecto de desarrollo.
 2. Aplicar `supabase/migrations/202609210001_order_delivery.sql` para guardar los datos y la modalidad de entrega.
-3. Copiar `.env.example` a `.env` y completar las variables sin subir ese archivo a Git.
-4. Mantener `FLOW_ENV=sandbox` y usar las credenciales de prueba de Flow.
-5. Definir `PUBLIC_SITE_URL` con la URL HTTPS pública del despliegue o túnel de desarrollo.
-6. Probar pago aprobado, rechazado, pendiente, doble callback y falta de stock.
-7. Cambiar a producción solamente después de revisar las órdenes y el descuento de inventario.
+3. Aplicar `supabase/migrations/202610020001_order_notifications.sql` para evitar correos duplicados.
+4. Copiar `.env.example` a `.env` y completar las variables sin subir ese archivo a Git.
+5. Mantener `FLOW_ENV=sandbox` y usar las credenciales de prueba de Flow.
+6. Definir `PUBLIC_SITE_URL` con la URL HTTPS pública del despliegue o túnel de desarrollo.
+7. Probar pago aprobado, rechazado, pendiente, doble callback y falta de stock.
+8. Cambiar a producción solamente después de revisar las órdenes y el descuento de inventario.
+
+## Avisos de nuevos pedidos
+
+Cuando Flow confirma un pago, el comprador recibe su número de pedido y un enlace directo al seguimiento. Nuité recibe otro correo con los productos, total, entrega, teléfono y un acceso a Pedidos web. La migración de notificaciones impide que los callbacks repetidos de Flow envíen correos duplicados.
+
+Para Gmail, activa la verificación en dos pasos y crea una contraseña de aplicación. Guarda esa contraseña solamente como `SMTP_APP_PASSWORD` en Vercel. No uses ni publiques la contraseña normal de Gmail.
 
 Flow envía un `POST` a `/api/flow/confirmation`; el servidor consulta el estado nuevamente en Flow antes de marcar la orden como pagada. La URL de retorno por sí sola nunca confirma una compra.
 

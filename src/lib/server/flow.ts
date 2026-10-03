@@ -1,5 +1,6 @@
 import { createHmac } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
+import { sendPaidOrderNotifications } from "./orderNotifications";
 
 type FlowParams = Record<string, string | number>;
 
@@ -105,6 +106,12 @@ export async function synchronizeFlowPayment(token: string) {
       p_provider_payload: status,
     });
     if (error) throw error;
+    try {
+      await sendPaidOrderNotifications(config.supabase, order.id, config.siteUrl);
+    } catch (notificationError) {
+      // La notificación nunca debe convertir un pago confirmado en un error para Flow.
+      console.error("No se pudieron procesar las notificaciones del pedido.", notificationError);
+    }
   } else if ([3, 4].includes(Number(status.status))) {
     const { error } = await config.supabase.rpc("release_store_order", {
       p_order_id: order.id,
